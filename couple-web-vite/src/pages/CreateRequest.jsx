@@ -6,27 +6,33 @@ const CreateRequest = () => {
   const myUserId = localStorage.getItem('user_id');
 
   const [formData, setFormData] = useState({
-    header: '',
+    header: '💖 คำขอใหม่',
     title: '',
     receiverEmail: '',
     time_start: '',
     time_end: '',
   });
 
+  const [isSending, setIsSending] = useState(false);
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
+  const [isWakeUp, setIsWakeUp] = useState(false); // เช็คว่า Server ตื่นหรือยัง
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const res = await axios.get('https://lover-backend.onrender.com/api/users');
         setUsers(res.data);
-      } catch (err) { console.log("Fetch users error", err); }
+        setIsWakeUp(true);
+      } catch (err) { 
+        console.log("Fetch users error", err);
+        // หากโหลดไม่ได้ ให้ลองใหม่ทุก 5 วินาทีจนกว่าจะตื่น
+        setTimeout(fetchUsers, 5000);
+      }
     };
     fetchUsers();
   }, []);
 
-  // --- คำนวณระยะเวลาแบบ Derived State (ไม่ใช้ useEffect เพื่อเลี่ยง Error) ---
   const calculateDuration = () => {
     if (!formData.time_start || !formData.time_end) return "0 วัน 0 ชม. 0 นาที";
     const start = new Date(formData.time_start);
@@ -66,10 +72,12 @@ const CreateRequest = () => {
       return;
     }
 
+    setIsSending(true);
+
     const payload = {
       header: formData.header,
       title: formData.title,
-      duration: currentDuration, // ใช้ค่าที่คำนวณได้
+      duration: currentDuration,
       sender_id: myUserId,
       receiver_email: formData.receiverEmail,
       time_start: formData.time_start,
@@ -80,7 +88,11 @@ const CreateRequest = () => {
       await axios.post('https://lover-backend.onrender.com/api/request', payload);
       alert('ส่งคำขอสำเร็จ! 🚀 แจ้งเตือนเข้า Discord เรียบร้อย');
       setFormData({ ...formData, title: '', receiverEmail: '', time_start: '', time_end: '' });
-    } catch { alert('ส่งไม่สำเร็จ! โปรดเช็คอีเมลผู้รับ'); }
+    } catch { 
+      alert('ส่งไม่สำเร็จ! เซิร์ฟเวอร์อาจกำลังตื่น โปรดลองใหม่อีกครั้งใน 30 วินาที'); 
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -100,7 +112,9 @@ const CreateRequest = () => {
         </div>
 
         <div className="relative space-y-2">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">3. ถึงใคร</label>
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">
+            3. ถึงใคร { !isWakeUp && <span className="text-amber-500 animate-pulse">(ระบบกำลังตื่น...)</span> }
+          </label>
           <input className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 ring-rose-300 font-bold"
             placeholder="พิมพ์อีเมลผู้รับ..." value={formData.receiverEmail} onChange={handleEmailChange} required />
           {filteredUsers.length > 0 && (
@@ -139,8 +153,16 @@ const CreateRequest = () => {
           <p className="font-black text-rose-500 text-lg">{currentDuration}</p>
         </div>
 
-        <button className="w-full bg-rose-500 text-white font-black py-5 rounded-3xl shadow-lg shadow-rose-200 hover:bg-rose-600 transition-all text-xl mt-4">
-          SEND REQUEST 🚀
+        <button 
+            disabled={isSending}
+            className="w-full bg-rose-500 text-white font-black py-5 rounded-3xl shadow-lg shadow-rose-200 hover:bg-rose-600 transition-all text-xl mt-4 disabled:bg-slate-300"
+        >
+          {isSending ? (
+            <div className="flex justify-center items-center gap-2">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <span>รอระบบตื่นแป๊บน้าา... ❤️</span>
+            </div>
+          ) : "SEND REQUEST 🚀"}
         </button>
       </form>
     </div>
