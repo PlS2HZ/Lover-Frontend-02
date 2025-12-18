@@ -77,7 +77,7 @@ const CreateRequest = () => {
     };
 
     try {
-      await axios.post('http://127.0.0.1:8080/api/request', payload);
+      await axios.post('https://lover-backend.onrender.com/api/request', payload);
       alert('ส่งคำขอสำเร็จ! 🚀 แจ้งเตือนเข้า Discord เรียบร้อย');
       setFormData({ ...formData, title: '', receiverEmail: '', time_start: '', time_end: '' });
     } catch { alert('ส่งไม่สำเร็จ! โปรดเช็คอีเมลผู้รับ'); }

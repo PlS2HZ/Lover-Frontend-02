@@ -11,7 +11,7 @@ const HistoryPage = () => {
     if (!userId) return;
     setLoading(true);
     try {
-      const res = await axios.get(`http://127.0.0.1:8080/api/my-requests?user_id=${userId}&t=${Date.now()}`);
+      const res = await axios.get(`https://lover-backend.onrender.com/api/my-requests?user_id=${userId}&t=${Date.now()}`);
       if (Array.isArray(res.data)) {
         const sortedData = res.data.sort((a, b) => b.id.localeCompare(a.id));
         setRequests(sortedData);
@@ -23,7 +23,7 @@ const HistoryPage = () => {
 
   const updateStatus = async (id, status) => {
   try {
-    const res = await axios.post('http://127.0.0.1:8080/api/update-status', { id, status });
+    const res = await axios.post('https://lover-backend.onrender.com/api/update-status', { id, status });
     if (res.status === 200) {
       alert(status === 'approved' ? 'อนุมัติเรียบร้อย! ✅' : 'ปฏิเสธคำขอแล้ว! ❌');
       await refreshList();

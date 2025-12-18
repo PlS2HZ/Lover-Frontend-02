@@ -9,7 +9,7 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://127.0.0.1:8080/api/register', formData);
+      await axios.post('https://lover-backend.onrender.com/api/register', formData);
       alert('สมัครสมาชิกสำเร็จ! กรุณาล็อกอิน');
       navigate('/login');
     } catch { alert('อีเมลนี้อาจถูกใช้งานแล้ว หรือเซิร์ฟเวอร์มีปัญหา'); }
