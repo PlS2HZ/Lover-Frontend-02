@@ -6,7 +6,7 @@ const CreateRequest = () => {
   const myUserId = localStorage.getItem('user_id');
 
   const [formData, setFormData] = useState({
-    header: '💖 คำขอใหม่',
+    header: '',
     title: '',
     receiverEmail: '',
     time_start: '',
