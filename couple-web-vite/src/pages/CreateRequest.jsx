@@ -19,7 +19,7 @@ const CreateRequest = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await axios.get('http://127.0.0.1:8080/api/users');
+        const res = await axios.get('https://lover-backend.onrender.com/api/users');
         setUsers(res.data);
       } catch (err) { console.log("Fetch users error", err); }
     };
