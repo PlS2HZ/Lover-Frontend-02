@@ -14,7 +14,7 @@ const Navbar = () => {
     <nav className="bg-white/80 backdrop-blur-md p-4 sticky top-0 z-50 border-b border-rose-50">
       <div className="max-w-6xl mx-auto flex justify-between items-center">
         <Link to="/" className="text-2xl font-black text-rose-500 italic uppercase tracking-tighter">
-          Lover Hub <span className="text-sm font-normal not-italic text-slate-300">v2.0</span>
+          LoverRequest <span className="text-sm font-normal not-italic text-slate-300">0507</span>
         </Link>
         
         <div className="flex items-center gap-4 font-bold text-[11px] uppercase tracking-widest">
