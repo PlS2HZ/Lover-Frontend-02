@@ -22,13 +22,24 @@ const HistoryPage = () => {
   useEffect(() => { refreshList(); }, [refreshList]);
 
   const updateStatus = async (id, status) => {
+  let reason = "";
+  if (status === 'rejected') {
+    reason = prompt("ระบุเหตุผลที่ไม่ไม่อนุมัติ:"); // ถามเหตุผล
+    if (reason === null) return; // กดยกเลิก ไม่ต้องทำต่อ
+  }
+
   try {
-    const res = await axios.post('https://lover-backend.onrender.com/api/update-status', { id, status });
+    const res = await axios.post('https://lover-backend.onrender.com/api/update-status', { 
+      id: id, 
+      status: status,
+      comment: reason // ส่งเหตุผลไปด้วย
+    });
+    
     if (res.status === 200) {
       alert(status === 'approved' ? 'อนุมัติเรียบร้อย! ✅' : 'ปฏิเสธคำขอแล้ว! ❌');
       await refreshList();
     }
-  } catch { // ลบ (error) ออกเพื่อแก้ ESLint error
+  } catch {
     alert('เกิดข้อผิดพลาดในการอัปเดตสถานะ');
   }
 };
