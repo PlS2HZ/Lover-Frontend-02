@@ -52,11 +52,11 @@ const Login = () => {
           SIGN IN
         </button>
 
-        <div className="relative flex py-4 items-center">
+        {/* <div className="relative flex py-4 items-center">
             <div className="flex-grow border-t border-slate-100"></div>
             <span className="flex-shrink mx-4 text-slate-300 text-[10px] font-bold">OR</span>
             <div className="flex-grow border-t border-slate-100"></div>
-        </div>
+        </div> */}
 
         {/* <button 
           type="button"
