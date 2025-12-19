@@ -9,11 +9,11 @@ const HistoryPage = () => {
   const userId = localStorage.getItem('user_id');
   const API_URL = "https://lover-backend.onrender.com";
 
-  // ฟังก์ชันดึงข้อมูลใหม่
   const refreshList = useCallback(async (showSilent = false) => {
     if (!userId) return;
-    if (!showSilent) setLoading(true); // ถ้าสั่ง refresh เงียบๆ ไม่ต้องขึ้นหน้า Loading จอกลาง
+    if (!showSilent) setLoading(true);
     try {
+      // เพิ่ม t=${Date.now()} เพื่อป้องกัน Browser จำค่าเก่า (No-Cache)
       const res = await axios.get(`${API_URL}/api/my-requests?user_id=${userId}&t=${Date.now()}`);
       if (Array.isArray(res.data)) {
         const sortedData = res.data.sort((a, b) => b.id.localeCompare(a.id));
@@ -40,26 +40,26 @@ const HistoryPage = () => {
             comment: reason
         });
 
-        // 2. เช็คสถานะการตอบกลับ
+        // 2. เช็คสถานะการตอบกลับ (axios จะมองว่าสำเร็จถ้าได้ status 200)
         if (res.status === 200) {
-            alert("ดำเนินการสำเร็จแล้ว ✨");
-            // 3. ✨ หัวใจสำคัญ: สั่งโหลดข้อมูลใหม่ทันที ข้อมูลจะอัปเดตและย้าย Tab เอง
+            // แจ้งเตือนผู้ใช้
+            alert(`ดำเนินการ ${newStatus === 'approved' ? 'อนุมัติ' : 'ไม่อนุมัติ'} สำเร็จแล้ว ✨`);
+            
+            // 3. หัวใจสำคัญ: โหลดข้อมูลใหม่จาก Server ทันที ข้อมูลจะอัปเดตและย้าย Tab เอง
             await refreshList(true); 
-        } else {
-            alert("ดำเนินการไม่สำเร็จ โปรดลองใหม่");
         }
     } catch (err) {
         console.error("updateStatus Error:", err);
-        alert("เกิดข้อผิดพลาด: เซิร์ฟเวอร์ไม่ตอบสนอง");
+        alert("เกิดข้อผิดพลาด: เซิร์ฟเวอร์ไม่ตอบสนอง หรือการเชื่อมต่อมีปัญหา");
     }
   };
 
-  // กรองรายการ (ตรวจสอบความถูกต้องของ ID)
+  // กรองรายการ: ใช้ String() เพื่อความชัวร์ว่า ID รูปแบบเดียวกัน
   const pendingList = requests.filter(r => r.status === 'pending' && String(r.receiver_id) === String(userId));
   const historyList = requests.filter(r => r.status !== 'pending' || (r.status === 'pending' && String(r.sender_id) === String(userId)));
 
   if (loading) return (
-    <div className="flex flex-col justify-center items-center min-h-[60vh] space-y-4 text-rose-400 font-black italic">
+    <div className="flex flex-col justify-center items-center min-h-[60vh] space-y-4 text-rose-400 font-black italic px-4 text-center">
       <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-rose-500"></div>
       <p>กำลังเปิดระบบ โปรดรอสักครู่... ❤️</p>
     </div>
@@ -74,7 +74,7 @@ const HistoryPage = () => {
         </button>
       </div>
 
-      {/* Tabs Switcher */}
+      {/* Tabs: ปรับขนาดให้พอดีมือถือ (Responsive) */}
       <div className="flex gap-2 md:gap-4 mb-6 md:mb-10 bg-white p-1.5 md:p-2 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-50 font-black">
         <button onClick={() => setActiveTab('pending')} className={`flex-1 py-3 md:py-5 rounded-xl md:rounded-[2rem] text-xs md:text-sm transition-all ${activeTab === 'pending' ? 'bg-rose-500 text-white shadow-lg' : 'text-slate-400'}`}>
           รออนุมัติ ({pendingList.length})
@@ -98,13 +98,17 @@ const HistoryPage = () => {
             
             <div className="bg-slate-50 p-4 md:p-6 rounded-2xl md:rounded-[2rem] mb-6 text-[10px] md:text-[11px] font-bold text-slate-500 space-y-2 md:space-y-3">
               <p className="flex justify-between"><span>👤 ผู้ส่ง:</span> <span className="text-rose-500 font-black">{item.sender_name}</span></p>
-              <p className="flex justify-between border-t border-slate-200 pt-2 font-medium"><span>📅 เริ่ม:</span> <span className="text-slate-800">{item.remark?.split('|')[0].replace('T', ' ')}</span></p>
-              <p className="flex justify-between font-medium"><span>🏁 จบ:</span> <span className="text-slate-800">{item.remark?.split('|')[1]?.replace('T', ' ')}</span></p>
+              <p className="flex justify-between border-t border-slate-200 pt-2 font-medium text-[9px] md:text-[10px]">
+                <span>📅 เริ่ม:</span> <span className="text-slate-800">{item.remark?.split('|')[0].replace('T', ' ')}</span>
+              </p>
+              <p className="flex justify-between font-medium text-[9px] md:text-[10px]">
+                <span>🏁 จบ:</span> <span className="text-slate-800">{item.remark?.split('|')[1]?.replace('T', ' ')}</span>
+              </p>
               <p className="flex justify-between border-t border-slate-200 pt-2 text-rose-500 text-xs md:text-sm font-black">
                 <span>⏱️ ระยะเวลา:</span> <span>{item.description}</span>
               </p>
               {item.comment && (
-                <div className="mt-2 p-2 bg-rose-50 rounded-lg text-rose-600 italic border-l-2 border-rose-300">
+                <div className="mt-2 p-2 bg-rose-50 rounded-lg text-rose-600 italic border-l-2 border-rose-300 text-[10px]">
                   💬 {item.comment}
                 </div>
               )}
@@ -112,10 +116,10 @@ const HistoryPage = () => {
 
             {item.status === 'pending' && String(item.receiver_id) === String(userId) && (
               <div className="flex gap-3 md:gap-4">
-                <button onClick={() => updateStatus(item.id, 'approved')} className="flex-1 bg-emerald-500 text-white py-3 md:py-5 rounded-2xl md:rounded-3xl font-black shadow-md hover:bg-emerald-600 active:scale-95 transition-all flex items-center justify-center gap-2">
+                <button onClick={() => updateStatus(item.id, 'approved')} className="flex-1 bg-emerald-500 text-white py-3 md:py-5 rounded-2xl md:rounded-3xl font-black shadow-md hover:bg-emerald-600 active:scale-95 transition-all text-sm">
                    อนุมัติ 👍
                 </button>
-                <button onClick={() => updateStatus(item.id, 'rejected')} className="flex-1 bg-rose-500 text-white py-3 md:py-5 rounded-2xl md:rounded-3xl font-black shadow-md hover:bg-rose-600 active:scale-95 transition-all flex items-center justify-center gap-2">
+                <button onClick={() => updateStatus(item.id, 'rejected')} className="flex-1 bg-rose-500 text-white py-3 md:py-5 rounded-2xl md:rounded-3xl font-black shadow-md hover:bg-rose-600 active:scale-95 transition-all text-sm">
                    ไม่อนุมัติ 👎
                 </button>
               </div>
