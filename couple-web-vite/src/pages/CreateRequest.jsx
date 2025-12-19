@@ -16,7 +16,7 @@ const CreateRequest = () => {
   const [isSending, setIsSending] = useState(false);
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
-  const [isWakeUp, setIsWakeUp] = useState(false); // เช็คว่า Server ตื่นหรือยัง
+  const [isWakeUp, setIsWakeUp] = useState(false);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -26,7 +26,6 @@ const CreateRequest = () => {
         setIsWakeUp(true);
       } catch (err) { 
         console.log("Fetch users error", err);
-        // หากโหลดไม่ได้ ให้ลองใหม่ทุก 5 วินาทีจนกว่าจะตื่น
         setTimeout(fetchUsers, 5000);
       }
     };
@@ -153,17 +152,17 @@ const CreateRequest = () => {
           <p className="font-black text-rose-500 text-lg">{currentDuration}</p>
         </div>
 
-        <button 
-            disabled={isSending}
-            className="w-full bg-rose-500 text-white font-black py-5 rounded-3xl shadow-lg shadow-rose-200 hover:bg-rose-600 transition-all text-xl mt-4 disabled:bg-slate-300"
-        >
-          {isSending ? (
-            <div className="flex justify-center items-center gap-2">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              <span>รอระบบตื่นแป๊บน้าา... ❤️</span>
-            </div>
-          ) : "SEND REQUEST 🚀"}
-        </button>
+        {/* ✨ ปรับปรุงปุ่มแสดงสถานะการส่งให้เป็นตามที่ต้องการ */}
+        {isSending ? (
+            <button disabled className="w-full bg-slate-100 text-slate-400 font-black py-5 rounded-[2rem] flex items-center justify-center gap-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-400"></div>
+                กำลังส่งคำขอ โปรดรอสักครู่... ❤️
+            </button>
+        ) : (
+            <button type="submit" className="w-full bg-rose-500 text-white font-black py-5 rounded-[2rem] shadow-xl shadow-rose-200 hover:bg-rose-600 active:scale-95 transition-all uppercase tracking-widest">
+                ส่งคำขอให้แฟน ✨ 🚀
+            </button>
+        )}
       </form>
     </div>
   );
