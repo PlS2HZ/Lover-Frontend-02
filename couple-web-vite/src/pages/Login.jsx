@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [formData, setFormData] = useState({
     identifier: '', // รองรับทั้ง Email หรือ Username
     password: ''
   });
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -58,13 +58,13 @@ const Login = () => {
             <div className="flex-grow border-t border-slate-100"></div>
         </div>
 
-        <button 
+        {/* <button 
           type="button"
           onClick={() => navigate('/register')}
           className="w-full bg-white border-2 border-slate-100 text-slate-500 font-black py-4 rounded-2xl hover:border-rose-200 hover:text-rose-500 transition-all active:scale-95"
         >
           CREATE NEW ACCOUNT ✨
-        </button>
+        </button> */}
       </form>
     </div>
   );
