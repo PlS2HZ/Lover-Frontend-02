@@ -58,9 +58,10 @@ const CalendarPage = () => {
             alert("บันทึกวันสำคัญเรียบร้อย! ❤️");
             setFormData({ title: '', description: '', visibleTo: [], repeatType: 'none' });
             fetchEvents();
-        } catch (err) { 
+        } catch (err) {
             console.error("Calender Error:", err)
-            alert("เกิดข้อผิดพลาด"); }
+            alert("เกิดข้อผิดพลาด");
+        }
     };
 
     const deleteEvent = async (id) => {
@@ -70,7 +71,8 @@ const CalendarPage = () => {
             fetchEvents();
         } catch (err) {
             console.error("Calender Error:", err)
-            ;alert("ลบไม่สำเร็จ"); }
+                ; alert("ลบไม่สำเร็จ");
+        }
     };
 
     // แก้ไขฟังก์ชันเช็ควันในปฏิทินให้รองรับการวนซ้ำ
@@ -107,22 +109,22 @@ const CalendarPage = () => {
                         <Bell className="text-rose-400" /> เพิ่มวันพิเศษ
                     </h2>
                     <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input className="p-3 bg-slate-50 border-2 border-slate-100 rounded-xl" placeholder="หัวข้อ" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} required />
-                        <input className="p-3 bg-slate-50 border-2 border-slate-100 rounded-xl" placeholder="คำอวยพร/คำอธิบาย" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
-                        
+                        <input className="p-3 bg-slate-50 border-2 border-slate-100 rounded-xl" placeholder="หัวข้อ" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required />
+                        <input className="p-3 bg-slate-50 border-2 border-slate-100 rounded-xl" placeholder="คำอวยพร/คำอธิบาย" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+
                         <div className="col-span-1 md:col-span-2 space-y-2">
-                            <label className="text-sm font-bold text-slate-400 flex items-center gap-1"><RefreshCw size={14}/> ตั้งค่าการแจ้งเตือนวนซ้ำ</label>
+                            <label className="text-sm font-bold text-slate-400 flex items-center gap-1"><RefreshCw size={14} /> ตั้งค่าการแจ้งเตือนวนซ้ำ</label>
                             <div className="flex flex-wrap gap-3">
                                 {[
-                                    {val: 'none', label: 'ครั้งเดียว'},
-                                    {val: 'daily', label: 'ทุกวัน'},
-                                    {val: 'monthly', label: 'ทุกเดือน'},
-                                    {val: 'yearly', label: 'ทุกปี'}
+                                    { val: 'none', label: 'ครั้งเดียว' },
+                                    { val: 'daily', label: 'ทุกวัน' },
+                                    { val: 'monthly', label: 'ทุกเดือน' },
+                                    { val: 'yearly', label: 'ทุกปี' }
                                 ].map(opt => (
                                     <button
                                         key={opt.val}
                                         type="button"
-                                        onClick={() => setFormData({...formData, repeatType: opt.val})}
+                                        onClick={() => setFormData({ ...formData, repeatType: opt.val })}
                                         className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${formData.repeatType === opt.val ? 'bg-rose-500 text-white shadow-md shadow-rose-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
                                     >
                                         {opt.label}
@@ -132,13 +134,13 @@ const CalendarPage = () => {
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <label className="text-sm font-bold text-slate-400 flex items-center gap-1"><Users size={16}/> ใครมองเห็นได้บ้าง?</label>
+                            <label className="text-sm font-bold text-slate-400 flex items-center gap-1"><Users size={16} /> ใครมองเห็นได้บ้าง?</label>
                             <div className="flex flex-wrap gap-2">
                                 {users.map(u => (
                                     <button key={u.id} type="button" onClick={() => {
                                         const current = formData.visibleTo;
                                         const next = current.includes(u.id) ? current.filter(id => id !== u.id) : [...current, u.id];
-                                        setFormData({...formData, visibleTo: next});
+                                        setFormData({ ...formData, visibleTo: next });
                                     }} className={`px-3 py-1 rounded-full text-[10px] font-bold ${formData.visibleTo.includes(u.id) ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-400'}`}>{u.username}</button>
                                 ))}
                             </div>
@@ -178,8 +180,14 @@ const CalendarPage = () => {
                                         </div>
                                         <p className="text-xs text-slate-500">{event.description}</p>
                                     </div>
+                                    {/* ตรวจสอบว่าเราเป็นคนสร้างรายการนี้หรือไม่ (created_by === userId) */}
                                     {event.created_by === userId && (
-                                        <button onClick={() => deleteEvent(event.id)} className="text-slate-200 hover:text-rose-500 transition-all"><Trash2 size={16} /></button>
+                                        <button
+                                            onClick={() => deleteEvent(event.id)}
+                                            className="text-slate-200 hover:text-rose-500 transition-all p-2"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
                                     )}
                                 </div>
                             ))
