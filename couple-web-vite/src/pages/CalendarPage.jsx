@@ -17,7 +17,7 @@ const CalendarPage = () => {
 
     const userId = localStorage.getItem('user_id');
     // *** สำคัญมาก: ตรวจสอบ URL ตรงนี้ให้ตรงกับหน้า Dashboard ของ Render ของคุณ ***
-    const API_URL = "https://lover-backend-ashen.onrender.com";
+    const API_URL = "https://lover-backend.onrender.com";
 
     useEffect(() => {
         // สร้างฟังก์ชันรวมเพื่อจัดการลำดับการโหลด
