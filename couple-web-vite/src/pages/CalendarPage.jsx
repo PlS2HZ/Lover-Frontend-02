@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import axios from 'axios';
-import { Heart, Bell, Trash2, Users } from 'lucide-react';
+import { Heart, Bell, Trash2, Users, Calendar as LucideCalendar } from 'lucide-react';
 
 const CalendarPage = () => {
     const [events, setEvents] = useState([]);

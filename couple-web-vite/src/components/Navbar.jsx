@@ -1,11 +1,11 @@
 import React from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom'; // เพิ่ม useLocation ตรงนี้ด้วย
-import { Calendar } from 'lucide-react'; // เพิ่มบรรทัดนี้ครับ!
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Calendar as CalendarIcon } from 'lucide-react'; // ใช้ชื่อ CalendarIcon เพื่อไม่ให้ซ้ำกับชื่อ Component อื่น
 
 const Navbar = () => {
   const username = localStorage.getItem('username');
   const navigate = useNavigate();
-  const location = useLocation();
+  const location = useLocation(); // ประกาศใช้งาน location เพื่อตรวจสอบ path ปัจจุบัน
 
   const handleLogout = () => {
     localStorage.clear();
@@ -18,22 +18,30 @@ const Navbar = () => {
         <Link to="/" className="text-2xl font-black text-rose-500 italic uppercase tracking-tighter">
           LoverRequest <span className="text-sm font-normal not-italic text-slate-300">0507</span>
         </Link>
-        
+
         <div className="flex items-center gap-4 font-bold text-[11px] uppercase tracking-widest">
           <Link to="/" className="text-slate-400 hover:text-rose-500 transition-colors mr-2">Home</Link>
-          
+
           {username ? (
             <>
-            <button 
-    onClick={() => navigate('/calendar')}
-    className={`flex flex-col items-center gap-1 ${location.pathname === '/calendar' ? 'text-rose-500' : 'text-slate-400'}`}
->
-    <Calendar size={24} />
-    <span className="text-[10px] font-bold">CALENDAR</span>
-</button>
+              {/* ปุ่มไปหน้า Calendar */}
+              <button
+                onClick={() => navigate('/calendar')}
+                className={`flex flex-col items-center gap-1 transition-colors ${
+                  location.pathname === '/calendar' ? 'text-rose-500' : 'text-slate-400 hover:text-rose-500'
+                }`}
+              >
+                <CalendarIcon size={20} /> {/* ใช้ชื่อ CalendarIcon ตามที่ import มา */}
+                <span className="text-[10px] font-black">CALENDAR</span>
+              </button>
+
               <Link to="/create" className="text-slate-400 hover:text-rose-500 transition-colors">Request</Link>
               <Link to="/history" className="text-slate-400 hover:text-rose-500 transition-colors">History</Link>
-              <button onClick={handleLogout} className="ml-2 bg-rose-50 text-rose-500 px-4 py-2 rounded-xl hover:bg-rose-500 hover:text-white transition-all border border-rose-100">
+              
+              <button 
+                onClick={handleLogout} 
+                className="ml-2 bg-rose-50 text-rose-500 px-4 py-2 rounded-xl hover:bg-rose-500 hover:text-white transition-all border border-rose-100"
+              >
                 LOGOUT ({username})
               </button>
             </>
@@ -42,9 +50,6 @@ const Navbar = () => {
               <Link to="/login" className="text-slate-500 px-4 py-2 rounded-xl hover:bg-slate-50 transition-all">
                 Login
               </Link>
-              {/* <Link to="/register" className="bg-rose-500 text-white px-5 py-2 rounded-xl shadow-lg shadow-rose-200 hover:bg-rose-600 transition-all">
-                Register
-              </Link> */}
             </div>
           )}
         </div>
