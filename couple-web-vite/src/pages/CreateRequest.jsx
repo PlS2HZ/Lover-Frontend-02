@@ -88,40 +88,40 @@ const CreateRequest = () => {
       alert('ส่งคำขอสำเร็จ! 🚀 แจ้งเตือนเข้า Discord เรียบร้อย');
       setFormData({ ...formData, title: '', receiverEmail: '', time_start: '', time_end: '' });
     } catch { 
-      alert('ส่งไม่สำเร็จ! เซิร์ฟเวอร์อาจกำลังตื่น โปรดลองใหม่อีกครั้งใน 30 วินาที'); 
+      alert('ส่งไม่สำเร็จ! เซิร์ฟเวอร์อาจกำลังพยายามเชื่อมต่อ โปรดลองใหม่อีกครั้ง'); 
     } finally {
       setIsSending(false);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-10 px-4">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-[2.5rem] shadow-xl space-y-6 border border-rose-50">
-        <h2 className="text-2xl font-black text-rose-500 mb-6 uppercase italic text-center">Create New Request</h2>
+    <div className="max-w-2xl mx-auto py-6 md:py-10 px-4">
+      <form onSubmit={handleSubmit} className="bg-white p-6 md:p-8 rounded-3xl md:rounded-[2.5rem] shadow-xl space-y-4 md:space-y-6 border border-rose-50">
+        <h2 className="text-xl md:text-2xl font-black text-rose-500 mb-4 uppercase italic text-center">Create Request</h2>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">1. หัวข้อคำขอ</label>
-          <input className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 ring-rose-300 font-bold"
+          <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">1. หัวข้อคำขอ</label>
+          <input className="w-full p-3 md:p-4 bg-slate-50 rounded-xl md:rounded-2xl border-none outline-none focus:ring-2 ring-rose-300 font-bold text-sm"
             value={formData.header} onChange={(e) => setFormData({...formData, header: e.target.value})} required />
         </div>
 
-        <div className="p-4 bg-rose-50 rounded-2xl border border-rose-100">
-          <label className="text-[10px] font-black text-rose-300 uppercase tracking-widest">2. จาก ID (You)</label>
-          <p className="font-bold text-rose-600">{myEmail}</p>
+        <div className="p-3 md:p-4 bg-rose-50 rounded-xl md:rounded-2xl border border-rose-100">
+          <label className="text-[9px] md:text-[10px] font-black text-rose-300 uppercase tracking-widest">2. จาก ID (You)</label>
+          <p className="font-bold text-rose-600 text-xs md:text-sm truncate">{myEmail}</p>
         </div>
 
         <div className="relative space-y-2">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">
-            3. ถึงใคร { !isWakeUp && <span className="text-amber-500 animate-pulse">(ระบบกำลังตื่น...)</span> }
+          <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+            3. ถึงใคร { !isWakeUp && <span className="text-amber-500 animate-pulse">(กำลังเปิดระบบ โปรดรอสักครู่...)</span> }
           </label>
-          <input className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 ring-rose-300 font-bold"
-            placeholder="พิมพ์อีเมลผู้รับ..." value={formData.receiverEmail} onChange={handleEmailChange} required />
+          <input className="w-full p-3 md:p-4 bg-slate-50 rounded-xl md:rounded-2xl border-none outline-none focus:ring-2 ring-rose-300 font-bold text-sm"
+            placeholder="อีเมลผู้รับ..." value={formData.receiverEmail} onChange={handleEmailChange} required />
           {filteredUsers.length > 0 && (
-            <div className="absolute z-10 w-full bg-white mt-2 rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+            <div className="absolute z-10 w-full bg-white mt-1 rounded-xl shadow-2xl border border-slate-100 overflow-hidden">
               {filteredUsers.map(u => (
                 <div key={u.id} onClick={() => { setFormData({...formData, receiverEmail: u.email}); setFilteredUsers([]); }}
-                  className="p-4 hover:bg-rose-50 cursor-pointer font-bold text-slate-600 border-b border-slate-50 last:border-0">
-                  {u.email} <span className="text-[10px] text-slate-300 ml-2">({u.username})</span>
+                  className="p-3 hover:bg-rose-50 cursor-pointer font-bold text-slate-600 text-xs border-b border-slate-50 last:border-0">
+                  {u.email}
                 </div>
               ))}
             </div>
@@ -129,37 +129,36 @@ const CreateRequest = () => {
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">4. รายละเอียด</label>
-          <textarea className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 ring-rose-300 h-24"
+          <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">4. รายละเอียด</label>
+          <textarea className="w-full p-3 md:p-4 bg-slate-50 rounded-xl md:rounded-2xl border-none outline-none focus:ring-2 ring-rose-300 h-20 md:h-24 text-sm"
             value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} required />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">5. เริ่ม</label>
-            <input type="datetime-local" className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold outline-none" 
+            <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">5. เริ่ม</label>
+            <input type="datetime-local" className="w-full p-3 md:p-4 bg-slate-50 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-bold outline-none" 
               value={formData.time_start} onChange={(e) => setFormData({...formData, time_start: e.target.value})} required />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">6. จบ</label>
-            <input type="datetime-local" className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold outline-none" 
+            <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">6. จบ</label>
+            <input type="datetime-local" className="w-full p-3 md:p-4 bg-slate-50 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-bold outline-none" 
               value={formData.time_end} onChange={(e) => setFormData({...formData, time_end: e.target.value})} required />
           </div>
         </div>
 
-        <div className="p-4 bg-slate-100 rounded-2xl border border-slate-200">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">7. ระยะเวลาที่คำนวณได้</label>
-          <p className="font-black text-rose-500 text-lg">{currentDuration}</p>
+        <div className="p-3 md:p-4 bg-slate-100 rounded-xl md:rounded-2xl border border-slate-200">
+          <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">7. ระยะเวลา</label>
+          <p className="font-black text-rose-500 text-base md:text-lg">{currentDuration}</p>
         </div>
 
-        {/* ✨ ปรับปรุงปุ่มแสดงสถานะการส่งให้เป็นตามที่ต้องการ */}
         {isSending ? (
-            <button disabled className="w-full bg-slate-100 text-slate-400 font-black py-5 rounded-[2rem] flex items-center justify-center gap-3">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-400"></div>
+            <button disabled className="w-full bg-slate-100 text-slate-400 font-black py-4 md:py-5 rounded-2xl md:rounded-[2rem] flex items-center justify-center gap-3 text-sm">
+                <div className="animate-spin rounded-full h-4 w-4 md:h-5 md:w-5 border-b-2 border-slate-400"></div>
                 กำลังส่งคำขอ โปรดรอสักครู่... ❤️
             </button>
         ) : (
-            <button type="submit" className="w-full bg-rose-500 text-white font-black py-5 rounded-[2rem] shadow-xl shadow-rose-200 hover:bg-rose-600 active:scale-95 transition-all uppercase tracking-widest">
+            <button type="submit" className="w-full bg-rose-500 text-white font-black py-4 md:py-5 rounded-2xl md:rounded-[2rem] shadow-xl shadow-rose-200 hover:bg-rose-600 active:scale-95 transition-all uppercase tracking-widest text-sm md:text-base">
                 ส่งคำขอให้แฟน ✨ 🚀
             </button>
         )}

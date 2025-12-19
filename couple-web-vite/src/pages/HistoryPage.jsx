@@ -21,28 +21,32 @@ const HistoryPage = () => {
 
   useEffect(() => { refreshList(); }, [refreshList]);
 
-  const updateStatus = async (id, newStatus) => {
+  // ส่วนหนึ่งของ HistoryPage.jsx ในฟังก์ชัน updateStatus
+const updateStatus = async (id, newStatus) => {
     try {
         const reason = newStatus === 'rejected' ? prompt("ระบุเหตุผลที่ไม่ส่งอนุมัติ:") : "";
         if (newStatus === 'rejected' && reason === null) return;
 
+        // แสดง Loading แจ้งเตือนผู้ใช้เล็กน้อย
         await axios.post(`https://lover-backend.onrender.com/api/update-status`, {
             id: id,
             status: newStatus,
             comment: reason
         });
 
-        // ✨ เพิ่มบรรทัดนี้: อัปเดตสถานะใน List ทันทีโดยไม่ต้องรีเฟรช
+        // ✨ หัวใจสำคัญ: อัปเดต State ทันทีเพื่อให้รายการย้าย Tab
         setRequests(prevRequests => 
             prevRequests.map(req => 
-                req.id === id ? { ...req, status: newStatus, comment: reason } : req
+                req.id === id 
+                ? { ...req, status: newStatus, comment: reason, processed_at: new Date().toISOString() } 
+                : req
             )
         );
 
         alert("ดำเนินการสำเร็จแล้ว ✨");
     } catch (err) {
         console.error("updateStatus Error:", err);
-        alert("เกิดข้อผิดพลาด");
+        alert("เกิดข้อผิดพลาดในการอัปเดตสถานะ");
     }
 };
 
