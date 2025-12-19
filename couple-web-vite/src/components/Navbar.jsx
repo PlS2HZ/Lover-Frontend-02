@@ -1,9 +1,11 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom'; // เพิ่ม useLocation ตรงนี้ด้วย
+import { Calendar } from 'lucide-react'; // เพิ่มบรรทัดนี้ครับ!
 
 const Navbar = () => {
   const username = localStorage.getItem('username');
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     localStorage.clear();
