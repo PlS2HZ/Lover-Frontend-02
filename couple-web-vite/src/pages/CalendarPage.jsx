@@ -65,15 +65,20 @@ const CalendarPage = () => {
     };
 
     const deleteEvent = async (id) => {
-        if (!window.confirm("ลบใช่ไหม?")) return;
-        try {
-            await axios.delete(`${API_URL}/api/events/delete?id=${id}`);
-            fetchEvents();
-        } catch (err) {
-            console.error("Calender Error:", err)
-                ; alert("ลบไม่สำเร็จ");
-        }
-    };
+    if (!window.confirm("ต้องการลบวันสำคัญนี้ใช่หรือไม่?")) return;
+    try {
+        await axios.delete(`${API_URL}/api/events/delete?id=${id}`);
+        
+        // ✨ เพิ่มบรรทัดนี้: ลบรายการออกจากสถานะในเครื่องทันที
+        setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
+        
+        // ไม่ต้องรอ fetchEvents ใหม่ก็ได้ รายการจะหายไปทันที
+        alert("ลบรายการสำเร็จแล้ว ❤️"); 
+    } catch (err) { 
+        console.error("Calendar Error:", err);
+        alert("ลบไม่สำเร็จ"); 
+    }
+};
 
     // แก้ไขฟังก์ชันเช็ควันในปฏิทินให้รองรับการวนซ้ำ
     const tileContent = ({ date, view }) => {

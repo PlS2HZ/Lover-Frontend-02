@@ -21,27 +21,29 @@ const HistoryPage = () => {
 
   useEffect(() => { refreshList(); }, [refreshList]);
 
-  const updateStatus = async (id, status) => {
-  let reason = "";
-  if (status === 'rejected') {
-    reason = prompt("ระบุเหตุผลที่ไม่ไม่อนุมัติ:"); // ถามเหตุผล
-    if (reason === null) return; // กดยกเลิก ไม่ต้องทำต่อ
-  }
+  const updateStatus = async (id, newStatus) => {
+    try {
+        const reason = newStatus === 'rejected' ? prompt("ระบุเหตุผลที่ไม่ส่งอนุมัติ:") : "";
+        if (newStatus === 'rejected' && reason === null) return;
 
-  try {
-    const res = await axios.post('https://lover-backend.onrender.com/api/update-status', { 
-      id: id, 
-      status: status,
-      comment: reason // ส่งเหตุผลไปด้วย
-    });
-    
-    if (res.status === 200) {
-      alert(status === 'approved' ? 'อนุมัติเรียบร้อย! ✅' : 'ปฏิเสธคำขอแล้ว! ❌');
-      await refreshList();
+        await axios.post(`https://lover-backend.onrender.com/api/update-status`, {
+            id: id,
+            status: newStatus,
+            comment: reason
+        });
+
+        // ✨ เพิ่มบรรทัดนี้: อัปเดตสถานะใน List ทันทีโดยไม่ต้องรีเฟรช
+        setRequests(prevRequests => 
+            prevRequests.map(req => 
+                req.id === id ? { ...req, status: newStatus, comment: reason } : req
+            )
+        );
+
+        alert("ดำเนินการสำเร็จแล้ว ✨");
+    } catch (err) {
+        console.error("updateStatus Error:", err);
+        alert("เกิดข้อผิดพลาด");
     }
-  } catch {
-    alert('เกิดข้อผิดพลาดในการอัปเดตสถานะ');
-  }
 };
 
   const pendingList = requests.filter(r => r.status === 'pending' && r.receiver_id === userId);
