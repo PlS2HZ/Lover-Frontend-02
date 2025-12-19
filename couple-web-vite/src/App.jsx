@@ -5,6 +5,7 @@ import CreateRequest from './pages/CreateRequest';
 import HistoryPage from './pages/HistoryPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import CalendarPage from './pages/CalendarPage';
 
 // Component ตรวจสอบการล็อกอิน
 const ProtectedRoute = ({ children }) => {
@@ -43,7 +44,16 @@ function App() {
             </ProtectedRoute>
           } 
         />
+        <Route 
+          path="/calendar" 
+          element={
+            <ProtectedRoute>
+              <CalendarPage />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
+      
     </Router>
   );
 }

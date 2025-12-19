@@ -22,6 +22,13 @@ const Navbar = () => {
           
           {username ? (
             <>
+            <button 
+    onClick={() => navigate('/calendar')}
+    className={`flex flex-col items-center gap-1 ${location.pathname === '/calendar' ? 'text-rose-500' : 'text-slate-400'}`}
+>
+    <Calendar size={24} />
+    <span className="text-[10px] font-bold">CALENDAR</span>
+</button>
               <Link to="/create" className="text-slate-400 hover:text-rose-500 transition-colors">Request</Link>
               <Link to="/history" className="text-slate-400 hover:text-rose-500 transition-colors">History</Link>
               <button onClick={handleLogout} className="ml-2 bg-rose-50 text-rose-500 px-4 py-2 rounded-xl hover:bg-rose-500 hover:text-white transition-all border border-rose-100">
