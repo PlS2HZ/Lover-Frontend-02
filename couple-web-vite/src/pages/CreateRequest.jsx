@@ -85,7 +85,7 @@ const CreateRequest = () => {
 
     try {
       await axios.post('https://lover-backend.onrender.com/api/request', payload);
-      alert('ส่งคำขอสำเร็จ! 🚀 แจ้งเตือนเข้า Discord เรียบร้อย');
+      alert('ส่งคำขอสำเร็จ! 🚀');
       setFormData({ ...formData, title: '', receiverEmail: '', time_start: '', time_end: '' });
     } catch { 
       alert('ส่งไม่สำเร็จ! เซิร์ฟเวอร์อาจกำลังพยายามเชื่อมต่อ โปรดลองใหม่อีกครั้ง'); 
@@ -159,7 +159,7 @@ const CreateRequest = () => {
             </button>
         ) : (
             <button type="submit" className="w-full bg-rose-500 text-white font-black py-4 md:py-5 rounded-2xl md:rounded-[2rem] shadow-xl shadow-rose-200 hover:bg-rose-600 active:scale-95 transition-all uppercase tracking-widest text-sm md:text-base">
-                ส่งคำขอให้แฟน ✨ 🚀
+                ส่งคำขอ ✨ 🚀
             </button>
         )}
       </form>
