@@ -1,56 +1,73 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Calendar as CalendarIcon } from 'lucide-react'; // ใช้ชื่อ CalendarIcon เพื่อไม่ให้ซ้ำกับชื่อ Component อื่น
+import { 
+  Home, 
+  Calendar as CalendarIcon, 
+  PlusCircle, 
+  History, 
+  LogOut 
+} from 'lucide-react';
 
 const Navbar = () => {
   const username = localStorage.getItem('username');
   const navigate = useNavigate();
-  const location = useLocation(); // ประกาศใช้งาน location เพื่อตรวจสอบ path ปัจจุบัน
+  const location = useLocation();
 
   const handleLogout = () => {
     localStorage.clear();
     navigate('/login');
   };
 
+  const navItemClass = (path) => `flex flex-col items-center gap-1 transition-all ${
+    location.pathname === path ? 'text-rose-500 scale-110' : 'text-slate-400 hover:text-rose-500'
+  }`;
+
   return (
     <nav className="bg-white/80 backdrop-blur-md p-4 sticky top-0 z-50 border-b border-rose-50">
       <div className="max-w-6xl mx-auto flex justify-between items-center">
-        <Link to="/" className="text-2xl font-black text-rose-500 italic uppercase tracking-tighter">
+        <Link to="/" className="text-2xl font-black text-rose-500 italic uppercase tracking-tighter flex items-center gap-2">
           LoverRequest <span className="text-sm font-normal not-italic text-slate-300">0507</span>
         </Link>
 
-        <div className="flex items-center gap-4 font-bold text-[11px] uppercase tracking-widest">
-          <Link to="/" className="text-slate-400 hover:text-rose-500 transition-colors mr-2">Home</Link>
+        <div className="flex items-center gap-6 font-bold uppercase tracking-widest">
+          {/* HOME */}
+          <Link to="/" className={navItemClass('/')}>
+            <Home size={20} />
+            <span className="text-[9px] font-black">HOME</span>
+          </Link>
 
           {username ? (
             <>
-              {/* ปุ่มไปหน้า Calendar */}
-              <button
-                onClick={() => navigate('/calendar')}
-                className={`flex flex-col items-center gap-1 transition-colors ${
-                  location.pathname === '/calendar' ? 'text-rose-500' : 'text-slate-400 hover:text-rose-500'
-                }`}
-              >
-                <CalendarIcon size={20} /> {/* ใช้ชื่อ CalendarIcon ตามที่ import มา */}
-                <span className="text-[10px] font-black">CALENDAR</span>
+              {/* CALENDAR */}
+              <button onClick={() => navigate('/calendar')} className={navItemClass('/calendar')}>
+                <CalendarIcon size={20} />
+                <span className="text-[9px] font-black">CALENDAR</span>
               </button>
 
-              <Link to="/create" className="text-slate-400 hover:text-rose-500 transition-colors">Request</Link>
-              <Link to="/history" className="text-slate-400 hover:text-rose-500 transition-colors">History</Link>
+              {/* REQUEST */}
+              <Link to="/create" className={navItemClass('/create')}>
+                <PlusCircle size={20} />
+                <span className="text-[9px] font-black">REQUEST</span>
+              </Link>
+
+              {/* HISTORY */}
+              <Link to="/history" className={navItemClass('/history')}>
+                <History size={20} />
+                <span className="text-[9px] font-black">HISTORY</span>
+              </Link>
               
               <button 
                 onClick={handleLogout} 
-                className="ml-2 bg-rose-50 text-rose-500 px-4 py-2 rounded-xl hover:bg-rose-500 hover:text-white transition-all border border-rose-100"
+                className="ml-2 bg-rose-50 text-rose-500 px-4 py-2 rounded-xl hover:bg-rose-500 hover:text-white transition-all border border-rose-100 flex items-center gap-2"
               >
-                LOGOUT ({username})
+                <LogOut size={16} />
+                <span className="text-[10px] hidden md:block">LOGOUT ({username})</span>
               </button>
             </>
           ) : (
-            <div className="flex gap-2">
-              <Link to="/login" className="text-slate-500 px-4 py-2 rounded-xl hover:bg-slate-50 transition-all">
-                Login
-              </Link>
-            </div>
+            <Link to="/login" className="text-slate-500 px-4 py-2 rounded-xl hover:bg-slate-50 transition-all text-[11px]">
+              LOGIN
+            </Link>
           )}
         </div>
       </div>
