@@ -1,170 +1,128 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Send, Clock, User, Tag } from 'lucide-react';
 
-const CreateRequest = () => {
-  const myEmail = localStorage.getItem('email');
-  const myUserId = localStorage.getItem('user_id');
-
-  const [formData, setFormData] = useState({
-    header: '',
-    title: '',
-    receiverEmail: '',
-    time_start: '',
-    time_end: '',
-  });
-
-  const [isSending, setIsSending] = useState(false);
-  const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
-  const [isWakeUp, setIsWakeUp] = useState(false);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await axios.get('https://lover-backend.onrender.com/api/users');
-        setUsers(res.data);
-        setIsWakeUp(true);
-      } catch (err) { 
-        console.log("Fetch users error", err);
-        setTimeout(fetchUsers, 5000);
-      }
-    };
-    fetchUsers();
-  }, []);
-
-  const calculateDuration = () => {
-    if (!formData.time_start || !formData.time_end) return "0 วัน 0 ชม. 0 นาที";
-    const start = new Date(formData.time_start);
-    const end = new Date(formData.time_end);
-    const diff = end - start;
-
-    if (diff <= 0) return "เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม";
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-    const mins = Math.floor((diff / (1000 * 60)) % 60);
-    const secs = Math.floor((diff / 1000) % 60);
+const CreateRequestPage = () => {
+    // 1. ดึงข้อมูลจาก localStorage ให้ถูกต้อง
+    const userEmail = localStorage.getItem('username') || localStorage.getItem('email') || 'ไม่พบข้อมูลผู้ใช้';
+    const userId = localStorage.getItem('user_id');
+    const [allUsers, setAllUsers] = useState([]);
+    const [filteredUsers, setFilteredUsers] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
     
-    let res = "";
-    if (days > 0) res += `${days} วัน `;
-    if (hours > 0) res += `${hours} ชม. `;
-    if (mins > 0) res += `${mins} นาที `;
-    if (secs > 0) res += `${secs} วินาที`;
-    return res || "0 วินาที";
-  };
+    const [formData, setFormData] = useState({
+        header: 'เที่ยว', // ค่าเริ่มต้นสำหรับ Tag
+        title: '',
+        receiver_email: '',
+        time_start: '',
+        time_end: ''
+    });
 
-  const currentDuration = calculateDuration();
+    // ✨ รายการ Tag หัวข้อคำขอ
+    const categories = ['เที่ยว', 'ออกกำลังกาย', 'เล่นเกม', 'เล่นกีฬา', 'ดูหนัง', 'กินข้าว'];
 
-  const handleEmailChange = (e) => {
-    const value = e.target.value;
-    setFormData({ ...formData, receiverEmail: value });
-    if (value.length > 1) {
-      const matched = users.filter(u => u.email.toLowerCase().includes(value.toLowerCase()));
-      setFilteredUsers(matched);
-    } else { setFilteredUsers([]); }
-  };
+    const API_URL = window.location.hostname === 'localhost'
+        ? 'http://localhost:8080'
+        : 'https://lover-backend.onrender.com';
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (new Date(formData.time_end) <= new Date(formData.time_start)) {
-      alert("กรุณาตรวจสอบเวลา เริ่ม-จบ ให้ถูกต้อง");
-      return;
-    }
+    useEffect(() => {
+        const fetchUsers = async () => {
+            const res = await axios.get(`${API_URL}/api/users`);
+            setAllUsers(res.data);
+        };
+        fetchUsers();
+    }, []);
 
-    setIsSending(true);
-
-    const payload = {
-      header: formData.header,
-      title: formData.title,
-      duration: currentDuration,
-      sender_id: myUserId,
-      receiver_email: formData.receiverEmail,
-      time_start: formData.time_start,
-      time_end: formData.time_end
+    // ✨ ค้นหาผู้รับ: พิมพ์ 1 ตัวก็ขึ้น และค้นหาได้ทั้ง Email/Username
+    const handleSearchUser = (val) => {
+        setSearchTerm(val);
+        if (val.length >= 1) { // เปลี่ยนจาก 2 เป็น 1 ตามต้องการ
+            const filtered = allUsers.filter(u => 
+                u.email.toLowerCase().includes(val.toLowerCase()) || 
+                u.username.toLowerCase().includes(val.toLowerCase())
+            );
+            setFilteredUsers(filtered);
+        } else {
+            setFilteredUsers([]);
+        }
     };
 
-    try {
-      await axios.post('https://lover-backend.onrender.com/api/request', payload);
-      alert('ส่งคำขอสำเร็จ! 🚀');
-      setFormData({ ...formData, title: '', receiverEmail: '', time_start: '', time_end: '' });
-    } catch { 
-      alert('ส่งไม่สำเร็จ! เซิร์ฟเวอร์อาจกำลังพยายามเชื่อมต่อ โปรดลองใหม่อีกครั้ง'); 
-    } finally {
-      setIsSending(false);
-    }
-  };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const payload = { ...formData, sender_id: userId };
+            await axios.post(`${API_URL}/api/request`, payload);
+            alert("ส่งคำขอสำเร็จ! 💖");
+        } catch (err) { 
+          console.log("CreateRequestPage handleSubmit ", err);
+          alert("เกิดข้อผิดพลาด"); }
+    };
 
-  return (
-    <div className="max-w-2xl mx-auto py-6 md:py-10 px-4">
-      <form onSubmit={handleSubmit} className="bg-white p-6 md:p-8 rounded-3xl md:rounded-[2.5rem] shadow-xl space-y-4 md:space-y-6 border border-rose-50">
-        <h2 className="text-xl md:text-2xl font-black text-rose-500 mb-4 uppercase italic text-center">Create Request</h2>
+    return (
+        <div className="min-h-screen bg-rose-50 p-4">
+            <form onSubmit={handleSubmit} className="max-w-2xl mx-auto bg-white p-8 rounded-3xl shadow-sm border-2 border-rose-100 space-y-8">
+                <h1 className="text-3xl font-black text-rose-600 text-center uppercase italic">Create Request</h1>
 
-        <div className="space-y-2">
-          <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">1. หัวข้อคำขอ</label>
-          <input className="w-full p-3 md:p-4 bg-slate-50 rounded-xl md:rounded-2xl border-none outline-none focus:ring-2 ring-rose-300 font-bold text-sm"
-            value={formData.header} onChange={(e) => setFormData({...formData, header: e.target.value})} required />
-        </div>
-
-        <div className="p-3 md:p-4 bg-rose-50 rounded-xl md:rounded-2xl border border-rose-100">
-          <label className="text-[9px] md:text-[10px] font-black text-rose-300 uppercase tracking-widest">2. จาก ID (You)</label>
-          <p className="font-bold text-rose-600 text-xs md:text-sm truncate">{myEmail}</p>
-        </div>
-
-        <div className="relative space-y-2">
-          <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-            3. ถึงใคร { !isWakeUp && <span className="text-amber-500 animate-pulse">(กำลังเปิดระบบ โปรดรอสักครู่...)</span> }
-          </label>
-          <input className="w-full p-3 md:p-4 bg-slate-50 rounded-xl md:rounded-2xl border-none outline-none focus:ring-2 ring-rose-300 font-bold text-sm"
-            placeholder="อีเมลผู้รับ..." value={formData.receiverEmail} onChange={handleEmailChange} required />
-          {filteredUsers.length > 0 && (
-            <div className="absolute z-10 w-full bg-white mt-1 rounded-xl shadow-2xl border border-slate-100 overflow-hidden">
-              {filteredUsers.map(u => (
-                <div key={u.id} onClick={() => { setFormData({...formData, receiverEmail: u.email}); setFilteredUsers([]); }}
-                  className="p-3 hover:bg-rose-50 cursor-pointer font-bold text-slate-600 text-xs border-b border-slate-50 last:border-0">
-                  {u.email}
+                {/* 1. หัวข้อคำขอ (Tags) */}
+                <div className="space-y-3">
+                    <label className="font-bold text-slate-600 flex items-center gap-2"><Tag size={18}/> 1. หัวข้อคำขอ</label>
+                    <div className="flex flex-wrap gap-2">
+                        {categories.map(cat => (
+                            <button key={cat} type="button" onClick={() => setFormData({...formData, header: cat})}
+                                className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${formData.header === cat ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-400 hover:bg-rose-100'}`}>
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        <div className="space-y-2">
-          <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">4. รายละเอียด</label>
-          <textarea className="w-full p-3 md:p-4 bg-slate-50 rounded-xl md:rounded-2xl border-none outline-none focus:ring-2 ring-rose-300 h-20 md:h-24 text-sm"
-            value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} required />
-        </div>
+                {/* 2. จากใคร (YOU) */}
+                <div className="p-4 bg-rose-50 rounded-2xl border-2 border-rose-100">
+                    <p className="text-xs font-bold text-rose-400 uppercase">2. จาก ID (YOU)</p>
+                    <p className="text-lg font-black text-rose-600">{userEmail}</p>
+                </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">5. เริ่ม</label>
-            <input type="datetime-local" className="w-full p-3 md:p-4 bg-slate-50 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-bold outline-none" 
-              value={formData.time_start} onChange={(e) => setFormData({...formData, time_start: e.target.value})} required />
-          </div>
-          <div className="space-y-2">
-            <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">6. จบ</label>
-            <input type="datetime-local" className="w-full p-3 md:p-4 bg-slate-50 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-bold outline-none" 
-              value={formData.time_end} onChange={(e) => setFormData({...formData, time_end: e.target.value})} required />
-          </div>
-        </div>
+                {/* 3. ถึงใคร (Search 1 character) */}
+                <div className="space-y-3 relative">
+                    <label className="font-bold text-slate-600 flex items-center gap-2"><User size={18}/> 3. ถึงใคร (Email หรือ Username)</label>
+                    <input className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl" placeholder="พิมพ์ชื่อหรืออีเมล..." value={searchTerm} onChange={(e) => handleSearchUser(e.target.value)} />
+                    {filteredUsers.length > 0 && (
+                        <div className="absolute z-10 w-full bg-white border-2 border-rose-100 rounded-2xl mt-1 shadow-xl overflow-hidden">
+                            {filteredUsers.map(u => (
+                                <div key={u.id} onClick={() => { setFormData({...formData, receiver_email: u.email}); setSearchTerm(u.username); setFilteredUsers([]); }}
+                                    className="p-3 hover:bg-rose-50 cursor-pointer border-b border-rose-50 last:border-0">
+                                    <p className="font-bold text-slate-700">{u.username}</p>
+                                    <p className="text-xs text-slate-400">{u.email}</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
-        <div className="p-3 md:p-4 bg-slate-100 rounded-xl md:rounded-2xl border border-slate-200">
-          <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">7. ระยะเวลา</label>
-          <p className="font-black text-rose-500 text-base md:text-lg">{currentDuration}</p>
-        </div>
+                {/* 4. รายละเอียด */}
+                <div className="space-y-3">
+                    <label className="font-bold text-slate-600">4. รายละเอียด</label>
+                    <textarea className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl h-32" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                </div>
 
-        {isSending ? (
-            <button disabled className="w-full bg-slate-100 text-slate-400 font-black py-4 md:py-5 rounded-2xl md:rounded-[2rem] flex items-center justify-center gap-3 text-sm">
-                <div className="animate-spin rounded-full h-4 w-4 md:h-5 md:w-5 border-b-2 border-slate-400"></div>
-                กำลังส่งคำขอ โปรดรอสักครู่... ❤️
-            </button>
-        ) : (
-            <button type="submit" className="w-full bg-rose-500 text-white font-black py-4 md:py-5 rounded-2xl md:rounded-[2rem] shadow-xl shadow-rose-200 hover:bg-rose-600 active:scale-95 transition-all uppercase tracking-widest text-sm md:text-base">
-                ส่งคำขอ ✨ 🚀
-            </button>
-        )}
-      </form>
-    </div>
-  );
+                {/* 5 & 6 เวลาที่เริ่ม/สิ้นสุด */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="font-bold text-slate-600 flex items-center gap-2"><Clock size={16}/> 5. เวลาที่เริ่ม</label>
+                        <input type="datetime-local" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl" value={formData.time_start} onChange={(e) => setFormData({...formData, time_start: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="font-bold text-slate-600 flex items-center gap-2"><Clock size={16}/> 6. เวลาที่สิ้นสุด</label>
+                        <input type="datetime-local" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl" value={formData.time_end} onChange={(e) => setFormData({...formData, time_end: e.target.value})} />
+                    </div>
+                </div>
+
+                <button type="submit" className="w-full bg-rose-500 text-white font-black py-5 rounded-2xl shadow-lg shadow-rose-200 hover:bg-rose-600 transition-all flex items-center justify-center gap-2 uppercase tracking-widest">
+                    <Send size={20}/> ส่งคำขอความรัก ✨
+                </button>
+            </form>
+        </div>
+    );
 };
 
-export default CreateRequest;
+export default CreateRequestPage;

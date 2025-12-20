@@ -54,6 +54,18 @@ const Navbar = () => {
                 <History size={18} className="md:w-5 md:h-5" />
                 <span className="text-[8px] md:text-[9px] font-black">HISTORY</span>
               </Link>
+
+              <div className="flex items-center gap-4">
+    <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition-all">
+        {/* แสดงรูปโปรไฟล์จิ๋ว ถ้าไม่มีให้แสดงไอคอนวงกลม */}
+        <div className="w-8 h-8 rounded-full bg-rose-200 border-2 border-white overflow-hidden shadow-sm">
+            <img src={localStorage.getItem('user_avatar') || 'https://via.placeholder.com/150'} alt="profile" className="w-full h-full object-cover" />
+        </div>
+        <span className="text-sm font-bold text-slate-600 hidden md:block">
+            {localStorage.getItem('username')}
+        </span>
+    </Link>
+</div>
               
               <button 
                 onClick={handleLogout} 

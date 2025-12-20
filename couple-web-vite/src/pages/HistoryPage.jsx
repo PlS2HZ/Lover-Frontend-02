@@ -8,8 +8,12 @@ const HistoryPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('pending');
   const userId = localStorage.getItem('user_id');
-  const API_URL = "https://lover-backend.onrender.com";
-
+  // const API_URL = "https://lover-backend.onrender.com";
+  // ตัวอย่างการตั้งค่าใน Frontend (React/Vite)
+  const API_URL = window.location.hostname === 'localhost'
+    ? 'http://localhost:8080'           // 🏠 ถ้าเปิดในเครื่อง ให้ชี้ไปที่ localhost
+    : 'https://lover-backend.onrender.com'; // 🚀 ถ้าเปิดบนเว็บจริง ให้ชี้ไปที่ Render
+    
   const refreshList = useCallback(async (showSilent = false) => {
     if (!userId) return;
     if (!showSilent) setLoading(true);
@@ -26,20 +30,20 @@ const HistoryPage = () => {
   const updateStatus = async (id, newStatus) => {
     if (isProcessing) return;
     try {
-        const reason = newStatus === 'rejected' ? prompt("ระบุเหตุผล:") : "";
-        if (newStatus === 'rejected' && reason === null) return;
+      const reason = newStatus === 'rejected' ? prompt("ระบุเหตุผล:") : "";
+      if (newStatus === 'rejected' && reason === null) return;
 
-        setIsProcessing(true);
-        const res = await axios.post(`${API_URL}/api/update-status`, { id, status: newStatus, comment: reason });
+      setIsProcessing(true);
+      const res = await axios.post(`${API_URL}/api/update-status`, { id, status: newStatus, comment: reason });
 
-        if (res.status === 200) {
-            alert(`ดำเนินการ ${newStatus === 'approved' ? 'อนุมัติ' : 'ไม่อนุมัติ'} เรียบร้อย ✨`);
-            await refreshList(true); // รายการจะย้ายหน้าทันที
-        }
+      if (res.status === 200) {
+        alert(`ดำเนินการ ${newStatus === 'approved' ? 'อนุมัติ' : 'ไม่อนุมัติ'} เรียบร้อย ✨`);
+        await refreshList(true); // รายการจะย้ายหน้าทันที
+      }
     } catch (err) {
-        console.error("updateStatus ",err);
-        alert("ดำเนินการสำเร็จ (แจ้งเตือนจะส่งตามไปครับ) ✨");
-        await refreshList(true);
+      console.error("updateStatus ", err);
+      alert("ดำเนินการสำเร็จ (แจ้งเตือนจะส่งตามไปครับ) ✨");
+      await refreshList(true);
     } finally { setIsProcessing(false); }
   };
 
@@ -58,7 +62,7 @@ const HistoryPage = () => {
       <div className="flex justify-between items-center mb-6 md:mb-10">
         <h2 className="text-2xl md:text-4xl font-black text-slate-800 italic uppercase">History 📋</h2>
         <button onClick={() => refreshList()} className="bg-white border-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-black flex items-center gap-2">
-            <RefreshCw size={14} /> REFRESH
+          <RefreshCw size={14} /> REFRESH
         </button>
       </div>
 
@@ -81,10 +85,10 @@ const HistoryPage = () => {
               </div>
             </div>
             <h4 className="text-xl md:text-2xl font-bold text-slate-700 mb-6">{item.title}</h4>
-            
+
             <div className="bg-slate-50 p-6 md:p-8 rounded-[2rem] mb-8 space-y-4">
               <div className="flex justify-between text-xs md:text-sm">
-                <span className="text-slate-400 flex items-center gap-1 font-black"><User size={14}/> ผู้ส่ง:</span>
+                <span className="text-slate-400 flex items-center gap-1 font-black"><User size={14} /> ผู้ส่ง:</span>
                 <span className="text-rose-500 font-black">{item.sender_name}</span>
               </div>
               <div className="pt-2 flex justify-between border-t border-slate-200">
@@ -96,35 +100,35 @@ const HistoryPage = () => {
 
             {item.status === 'pending' && String(item.receiver_id) === String(userId) && (
               <div className="flex flex-col md:flex-row gap-4">
-                <button 
+                <button
                   disabled={isProcessing}
-                  onClick={() => updateStatus(item.id, 'approved')} 
+                  onClick={() => updateStatus(item.id, 'approved')}
                   className={`flex-1 py-5 rounded-2xl md:rounded-[2rem] font-black shadow-lg transition-all text-sm md:text-lg flex items-center justify-center gap-2 ${isProcessing ? 'bg-slate-100 text-slate-400' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
                 >
-                   {isProcessing ? "กำลังส่ง..." : "อนุมัติคำขอ 👍"}
+                  {isProcessing ? "กำลังส่ง..." : "อนุมัติคำขอ 👍"}
                 </button>
-                <button 
+                <button
                   disabled={isProcessing}
-                  onClick={() => updateStatus(item.id, 'rejected')} 
+                  onClick={() => updateStatus(item.id, 'rejected')}
                   className={`flex-1 py-5 rounded-2xl md:rounded-[2rem] font-black shadow-lg transition-all text-sm md:text-lg flex items-center justify-center gap-2 ${isProcessing ? 'bg-slate-100 text-slate-400' : 'bg-rose-500 text-white hover:bg-rose-600'}`}
                 >
-                   {isProcessing ? "กำลังส่ง..." : "ไม่อนุมัติคำขอ 👎"}
+                  {isProcessing ? "กำลังส่ง..." : "ไม่อนุมัติคำขอ 👎"}
                 </button>
               </div>
             )}
-            
+
             {item.processed_at && (
               <div className="flex items-center justify-center gap-2 text-[8px] md:text-[10px] font-black text-slate-300 uppercase mt-6">
-                <Clock size={12}/> ดำเนินการเมื่อ: {new Date(item.processed_at).toLocaleString('th-TH')}
+                <Clock size={12} /> ดำเนินการเมื่อ: {new Date(item.processed_at).toLocaleString('th-TH')}
               </div>
             )}
           </div>
         ))}
       </div>
       {(activeTab === 'pending' ? pendingList : historyList).length === 0 && (
-          <div className="text-center py-32 bg-white rounded-[3rem] md:rounded-[5rem] border-4 border-dashed border-slate-50 text-slate-200 font-black italic uppercase text-lg md:text-2xl">
-            ไม่มีรายการ ✨
-          </div>
+        <div className="text-center py-32 bg-white rounded-[3rem] md:rounded-[5rem] border-4 border-dashed border-slate-50 text-slate-200 font-black italic uppercase text-lg md:text-2xl">
+          ไม่มีรายการ ✨
+        </div>
       )}
     </div>
   );
