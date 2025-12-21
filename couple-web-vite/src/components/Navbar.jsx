@@ -48,9 +48,9 @@ const Navbar = () => {
                             <Link to="/login" className="flex items-center gap-1 bg-rose-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-md shadow-rose-200">
                                 <LogIn size={14} /> เข้าสู่ระบบ
                             </Link>
-                            <Link to="/register" className="flex items-center gap-1 border-2 border-rose-100 text-rose-400 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-rose-50 transition-all">
+                            {/* <Link to="/register" className="flex items-center gap-1 border-2 border-rose-100 text-rose-400 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-rose-50 transition-all">
                                 <UserPlus size={14} /> สมัคร
-                            </Link>
+                            </Link> */}
                         </div>
                     )}
                 </div>
