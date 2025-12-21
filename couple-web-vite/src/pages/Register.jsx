@@ -8,22 +8,22 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // ✨ คำนวณ API_URL ตามตำแหน่งที่รันแอป
-  const API_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:8080' 
+  // ✨ คำนวณ API_URL ตามตำแหน่งที่รันแอป (ใช้ได้ทั้ง localhost และ Vercel)
+  const API_URL = window.location.hostname === 'localhost'
+    ? 'http://localhost:8080'
     : 'https://lover-backend.onrender.com';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-        // ส่งข้อมูลไปที่ API
+        // ✅ ส่งข้อมูลไปที่ API /api/register
         await axios.post(`${API_URL}/api/register`, formData);
         alert('สมัครสมาชิกสำเร็จ! 🎉 กรุณาล็อกอินเพื่อเริ่มใช้งาน');
         navigate('/login');
     } catch (err) {
         console.error("Register Error:", err);
-        const msg = err.response?.data || 'สมัครไม่สำเร็จ เช็คว่าคุณรัน Backend ในเครื่อง (localhost:8080) หรือยัง?';
+        const msg = err.response?.data || 'สมัครไม่สำเร็จ กรุณาลองใหม่อีกครั้ง หรือตรวจสอบการเชื่อมต่อ Backend';
         alert(msg);
     } finally {
         setLoading(false);
@@ -59,6 +59,7 @@ const Register = () => {
           </div>
           <button 
             disabled={loading}
+            type="submit"
             className="w-full bg-rose-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-rose-100 hover:bg-rose-600 active:scale-95 transition-all flex items-center justify-center gap-2 uppercase tracking-widest mt-4"
           >
             {loading ? <Loader2 className="animate-spin" size={20} /> : <UserPlus size={20} />}
