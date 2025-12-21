@@ -93,27 +93,29 @@ const handleSubmit = async (e) => {
     e.preventDefault();
     try {
         const combinedDate = new Date(date);
-        
-        // ✨ บังคับให้เป็น 00 วินาที เพื่อให้ Backend ตรวจเช็คเวลาได้แม่นยำ (ตรงกับ 00.000Z)
         combinedDate.setHours(parseInt(timeHour));
-        combinedDate.setMinutes(parseInt(timeMinute));
-        combinedDate.setSeconds(0); // บังคับวินาทีเป็น 0
-        combinedDate.setMilliseconds(0); // บังคับมิลลิวินาทีเป็น 0
+    combinedDate.setMinutes(parseInt(timeMinute));
+    combinedDate.setSeconds(0); // ✅ บังคับเป็น 0 เพื่อให้ตรงกับเงื่อนไขใน Backend
+    combinedDate.setMilliseconds(0); // ✅ บังคับมิลลิวินาทีเป็น 0
 
         const payload = {
-            // ใช้ toISOString() ซึ่งจะเป็นเวลามาตรฐาน UTC เสมอ
-            event_date: combinedDate.toISOString(),
+            event_date: combinedDate.toISOString(), 
             title: formData.title,
             description: formData.description,
             created_by: userId,
             visible_to: formData.visibleTo,
-            repeat_type: formData.repeatType
+            repeat_type: formData.repeatType,
+            is_special: true // ✅ บังคับให้เป็นวันสำคัญเพื่อแสดงหน้า Home
         };
 
+        // ส่งข้อมูลไปบันทึก
         await axios.post(`${API_URL}/api/events/create`, payload);
-        alert(`บันทึกนัดหมายสำเร็จ! ระบบจะแจ้งเตือน Discord ในวันที่ ${combinedDate.toLocaleDateString('th-TH')} เวลา ${timeHour}:${timeMinute} น.`);
         
-        // Reset ฟอร์ม
+        // ✨ ส่งการแจ้งเตือนไป Discord ทันทีเมื่อบันทึกใหม่ (ถ้า Backend ยังไม่ทำส่วนนี้)
+        // หรือพึ่งพา Backend Cron Job ก็ได้ แต่ Payload ต้องเป๊ะ
+        
+        alert(`🔔 บันทึกนัดหมายสำเร็จ! ระบบจะแจ้งเตือน Discord ในวันที่ ${combinedDate.toLocaleDateString('th-TH')} เวลา ${timeHour}:${timeMinute} น.`);
+        
         setTimeHour("00"); setTimeMinute("00"); setTimeSecond("00");
         setFormData({ title: '', description: '', visibleTo: [], repeatType: 'none' });
         fetchEvents();
@@ -123,17 +125,20 @@ const handleSubmit = async (e) => {
     }
 };
 
-    const deleteEvent = async (id, title) => {
-        if (!window.confirm(`ต้องการลบกิจกรรม "${title}" ใช่หรือไม่?`)) return;
-        try {
-            await axios.delete(`${API_URL}/api/events/delete?id=${id}&title=${encodeURIComponent(title)}`);
-            setEvents(prev => prev.filter(ev => ev.id !== id));
-            alert("ลบรายการสำเร็จ ✨");
-        } catch (err) {
-            console.log("Error deleting event:", err);
-            alert("ลบไม่สำเร็จ");
-        }
-    };
+    // ✨ 2. แก้ไขฟังก์ชันลบ (เพิ่มการส่ง Title ไปแจ้งเตือน Discord)
+const deleteEvent = async (id, title) => {
+    if (!window.confirm(`ต้องการลบกิจกรรม "${title}" ใช่หรือไม่?`)) return;
+    try {
+        // ส่ง ID และ Title ไปยัง Backend เพื่อให้ Backend ส่ง Discord แจ้งลบ
+        await axios.delete(`${API_URL}/api/events/delete?id=${id}&title=${encodeURIComponent(title)}&user_id=${userId}`);
+        
+        setEvents(prev => prev.filter(ev => ev.id !== id));
+        alert("ลบรายการสำเร็จ และแจ้งเตือนการลบไปที่ Discord แล้ว ✨");
+    } catch (err) {
+        console.log("Error deleting event:", err);
+        alert("ลบไม่สำเร็จ");
+    }
+};
 
     const tileContent = ({ date, view }) => {
         if (view === 'month' && events.length > 0) {

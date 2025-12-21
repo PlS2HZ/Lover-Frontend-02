@@ -1,6 +1,8 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { RefreshCw, Clock, User, CheckCircle, XCircle } from 'lucide-react';
+import { RefreshCw, Clock, User, CheckCircle, XCircle, Heart } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const HistoryPage = () => {
   const [requests, setRequests] = useState([]);
@@ -8,11 +10,10 @@ const HistoryPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('pending');
   const userId = localStorage.getItem('user_id');
-  // const API_URL = "https://lover-backend.onrender.com";
-  // ตัวอย่างการตั้งค่าใน Frontend (React/Vite)
+
   const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:8080'           // 🏠 ถ้าเปิดในเครื่อง ให้ชี้ไปที่ localhost
-    : 'https://lover-backend.onrender.com'; // 🚀 ถ้าเปิดบนเว็บจริง ให้ชี้ไปที่ Render
+    ? 'http://localhost:8080'
+    : 'https://lover-backend.onrender.com';
     
   const refreshList = useCallback(async (showSilent = false) => {
     if (!userId) return;
@@ -20,25 +21,32 @@ const HistoryPage = () => {
     try {
       const res = await axios.get(`${API_URL}/api/my-requests?user_id=${userId}&t=${Date.now()}`);
       if (Array.isArray(res.data)) {
-        setRequests(res.data.sort((a, b) => b.id.localeCompare(a.id)));
+        // ✅ เรียงตามเวลานาฬิกาสากล (คำขอล่าสุดขึ้นก่อน)
+        // ใช้ created_at หรือ id ที่เป็นลำดับเวลาจากฐานข้อมูล
+        const sorted = res.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        setRequests(sorted);
       }
-    } catch (error) { console.error(error); } finally { setLoading(false); }
-  }, [userId]);
+    } catch (error) { 
+      console.error(error); 
+    } finally { 
+      setLoading(false); 
+    }
+  }, [userId, API_URL]);
 
   useEffect(() => { refreshList(); }, [refreshList]);
 
   const updateStatus = async (id, newStatus) => {
     if (isProcessing) return;
     try {
-      const reason = newStatus === 'rejected' ? prompt("ระบุเหตุผล:") : "";
+      const reason = newStatus === 'rejected' ? prompt("ระบุเหตุผลที่ไม่อนุมัติ:") : "";
       if (newStatus === 'rejected' && reason === null) return;
 
       setIsProcessing(true);
       const res = await axios.post(`${API_URL}/api/update-status`, { id, status: newStatus, comment: reason });
 
       if (res.status === 200) {
-        alert(`ดำเนินการ ${newStatus === 'approved' ? 'อนุมัติ' : 'ไม่อนุมัติ'} เรียบร้อย ✨`);
-        await refreshList(true); // รายการจะย้ายหน้าทันที
+        alert(`ดำเนินการเรียบร้อย ✨`);
+        await refreshList(true);
       }
     } catch (err) {
       console.error("updateStatus ", err);
@@ -53,16 +61,16 @@ const HistoryPage = () => {
   if (loading) return (
     <div className="flex flex-col justify-center items-center min-h-[60vh] space-y-4 text-rose-400 font-black italic px-4 text-center">
       <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-rose-500"></div>
-      <p>กำลังรีเฟรช โปรดรอสักครู่... ❤️</p>
+      <p>กำลังรีเฟรชประวัติความรัก... ❤️</p>
     </div>
   );
 
   return (
-    <div className="max-w-4xl mx-auto py-6 md:py-12 px-4 pb-24 font-sans">
+    <div className="max-w-4xl mx-auto py-6 md:py-12 px-4 pb-24 font-sans min-h-screen">
       <div className="flex justify-between items-center mb-6 md:mb-10">
-        <h2 className="text-2xl md:text-4xl font-black text-slate-800 italic uppercase">History 📋</h2>
-        <button onClick={() => refreshList()} className="bg-white border-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-black flex items-center gap-2">
-          <RefreshCw size={14} /> REFRESH
+        <h2 className="text-2xl md:text-4xl font-black text-slate-800 italic uppercase flex items-center gap-2">History 📋</h2>
+        <button onClick={() => refreshList()} className="bg-white border-2 border-rose-100 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-black flex items-center gap-2 text-rose-500 hover:bg-rose-50 transition-colors">
+          <RefreshCw size={14} className={isProcessing ? "animate-spin" : ""} /> REFRESH
         </button>
       </div>
 
@@ -76,59 +84,92 @@ const HistoryPage = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:gap-8">
-        {(activeTab === 'pending' ? pendingList : historyList).map((item) => (
-          <div key={item.id} className="bg-white p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] shadow-sm border-2 border-slate-50">
-            <div className="flex justify-between items-start mb-6">
-              <span className="font-black text-rose-500 text-[9px] uppercase bg-rose-50 px-4 py-1.5 rounded-full tracking-wider">{item.category}</span>
-              <div className={`px-5 py-1.5 rounded-full font-black text-[10px] md:text-[12px] uppercase ${item.status === 'pending' ? 'bg-amber-100 text-amber-600' : item.status === 'approved' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                {item.status}
+        <AnimatePresence mode="popLayout">
+          {(activeTab === 'pending' ? pendingList : historyList).map((item) => (
+            <motion.div 
+              key={item.id} 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] shadow-xl border-2 border-rose-50 relative overflow-hidden group"
+            >
+              {/* ❤️ การ์ดรูปหัวใจพื้นหลัง */}
+              <div className="absolute -right-6 -bottom-6 text-rose-50 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Heart size={150} fill="currentColor" />
               </div>
-            </div>
-            <h4 className="text-xl md:text-2xl font-bold text-slate-700 mb-6">{item.title}</h4>
 
-            <div className="bg-slate-50 p-6 md:p-8 rounded-[2rem] mb-8 space-y-4">
-              <div className="flex justify-between text-xs md:text-sm">
-                <span className="text-slate-400 flex items-center gap-1 font-black"><User size={14} /> ผู้ส่ง:</span>
-                <span className="text-rose-500 font-black">{item.sender_name}</span>
+              <div className="flex justify-between items-start mb-6 relative z-10">
+                <span className="font-black text-rose-500 text-[9px] uppercase bg-rose-50 px-4 py-1.5 rounded-full tracking-wider">{item.category}</span>
+                <div className={`px-5 py-1.5 rounded-full font-black text-[10px] md:text-[12px] uppercase shadow-sm ${item.status === 'pending' ? 'bg-amber-100 text-amber-600' : item.status === 'approved' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                  {item.status}
+                </div>
               </div>
-              <div className="pt-2 flex justify-between border-t border-slate-200">
-                <span className="text-[10px] md:text-xs text-slate-400 font-black uppercase tracking-tighter">⏱️ ระยะเวลาที่ขอ:</span>
-                <span className="text-rose-500 font-black text-base md:text-xl">{item.description}</span>
-              </div>
-              {item.comment && <div className="mt-4 p-4 bg-white rounded-xl text-rose-600 text-xs italic border-l-4 border-rose-300">💬 {item.comment}</div>}
-            </div>
+              
+              <h4 className="text-xl md:text-2xl font-bold text-slate-700 mb-2 relative z-10">{item.title}</h4>
+              
+              {/* 🕒 แสดงเวลาส่งคำขอล่าสุด (นาฬิกาสากล) */}
+              <p className="text-[10px] md:text-[11px] text-slate-400 font-black uppercase tracking-tight mb-6 flex items-center gap-1 relative z-10">
+                <Clock size={12} /> ส่งเมื่อ: {new Date(item.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น. · {new Date(item.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+              </p>
 
-            {item.status === 'pending' && String(item.receiver_id) === String(userId) && (
-              <div className="flex flex-col md:flex-row gap-4">
-                <button
-                  disabled={isProcessing}
-                  onClick={() => updateStatus(item.id, 'approved')}
-                  className={`flex-1 py-5 rounded-2xl md:rounded-[2rem] font-black shadow-lg transition-all text-sm md:text-lg flex items-center justify-center gap-2 ${isProcessing ? 'bg-slate-100 text-slate-400' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
-                >
-                  {isProcessing ? "กำลังส่ง..." : "อนุมัติคำขอ 👍"}
-                </button>
-                <button
-                  disabled={isProcessing}
-                  onClick={() => updateStatus(item.id, 'rejected')}
-                  className={`flex-1 py-5 rounded-2xl md:rounded-[2rem] font-black shadow-lg transition-all text-sm md:text-lg flex items-center justify-center gap-2 ${isProcessing ? 'bg-slate-100 text-slate-400' : 'bg-rose-500 text-white hover:bg-rose-600'}`}
-                >
-                  {isProcessing ? "กำลังส่ง..." : "ไม่อนุมัติคำขอ 👎"}
-                </button>
+              <div className="bg-slate-50 p-6 md:p-8 rounded-[2rem] mb-8 space-y-4 relative z-10 border border-slate-100">
+                <div className="flex justify-between text-xs md:text-sm">
+                  <span className="text-slate-400 flex items-center gap-1 font-black"><User size={14} /> จาก:</span>
+                  <span className="text-rose-500 font-black">{item.sender_name}</span>
+                </div>
+                <div className="pt-4 flex justify-between border-t border-slate-200/60">
+                  <span className="text-[10px] md:text-xs text-slate-400 font-black uppercase tracking-tighter">⏱️ ระยะเวลากิจกรรม:</span>
+                  <span className="text-rose-500 font-black text-base md:text-xl">{item.description}</span>
+                </div>
+                {item.comment && (
+                  <motion.div 
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="mt-4 p-4 bg-white rounded-xl text-rose-600 text-xs italic border-l-4 border-rose-300 shadow-sm"
+                  >
+                    💬 เหตุผล: {item.comment}
+                  </motion.div>
+                )}
               </div>
-            )}
 
-            {item.processed_at && (
-              <div className="flex items-center justify-center gap-2 text-[8px] md:text-[10px] font-black text-slate-300 uppercase mt-6">
-                <Clock size={12} /> ดำเนินการเมื่อ: {new Date(item.processed_at).toLocaleString('th-TH')}
-              </div>
-            )}
-          </div>
-        ))}
+              {item.status === 'pending' && String(item.receiver_id) === String(userId) && (
+                <div className="flex flex-col md:flex-row gap-4 relative z-10">
+                  <button
+                    disabled={isProcessing}
+                    onClick={() => updateStatus(item.id, 'approved')}
+                    className={`flex-1 py-5 rounded-2xl md:rounded-[2rem] font-black shadow-lg transition-all text-sm md:text-lg flex items-center justify-center gap-2 active:scale-95 ${isProcessing ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-emerald-500 text-white hover:bg-emerald-600 hover:shadow-emerald-200'}`}
+                  >
+                    {isProcessing ? "กำลังส่ง..." : <><CheckCircle size={20}/> อนุมัติคำขอ</>}
+                  </button>
+                  <button
+                    disabled={isProcessing}
+                    onClick={() => updateStatus(item.id, 'rejected')}
+                    className={`flex-1 py-5 rounded-2xl md:rounded-[2rem] font-black shadow-lg transition-all text-sm md:text-lg flex items-center justify-center gap-2 active:scale-95 ${isProcessing ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-rose-500 text-white hover:bg-rose-600 hover:shadow-rose-200'}`}
+                  >
+                    {isProcessing ? "กำลังส่ง..." : <><XCircle size={20}/> ไม่อนุมัติ</>}
+                  </button>
+                </div>
+              )}
+
+              {/* เวลาที่ดำเนินการ (สำหรับหน้าประวัติ) */}
+              {item.status !== 'pending' && item.processed_at && (
+                <div className="flex items-center justify-center gap-2 text-[9px] md:text-[11px] font-black text-slate-400 uppercase mt-6 pt-4 border-t border-dashed border-slate-100 relative z-10">
+                  <Clock size={12} /> {item.status === 'approved' ? 'อนุมัติเมื่อ:' : 'ปฏิเสธเมื่อ:'} {new Date(item.processed_at).toLocaleString('th-TH')}
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
+
       {(activeTab === 'pending' ? pendingList : historyList).length === 0 && (
-        <div className="text-center py-32 bg-white rounded-[3rem] md:rounded-[5rem] border-4 border-dashed border-slate-50 text-slate-200 font-black italic uppercase text-lg md:text-2xl">
-          ไม่มีรายการ ✨
-        </div>
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-32 bg-white rounded-[3rem] md:rounded-[5rem] border-4 border-dashed border-rose-100 text-rose-200 font-black italic uppercase text-lg md:text-2xl shadow-inner"
+        >
+          ยังไม่มีเรื่องราวใหม่ๆ ✨
+        </motion.div>
       )}
     </div>
   );
