@@ -122,7 +122,7 @@ const HomePage = () => {
       setShowFixedPhotos(true);
       localStorage.removeItem('isExploded');
       localStorage.removeItem('explosionTimestamp');
-    }, 40000); 
+    }, 5000); 
   };
 
   const bgStyles = {
