@@ -1,20 +1,22 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useMemo } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import axios from 'axios';
-import { Heart, Bell, Trash2, Users, RefreshCw, Clock, Filter } from 'lucide-react';
+import { Heart, Bell, Trash2, Users, RefreshCw, Clock, Filter, Star } from 'lucide-react';
 
 const CalendarPage = () => {
     const [events, setEvents] = useState([]);
     const [users, setUsers] = useState([]);
     const [date, setDate] = useState(new Date());
     const [isLoading, setIsLoading] = useState(true);
-    
-    // ✨ ระบบเลือกเวลาแบบละเอียด ชั่วโมง:นาที:วินาที (Default เป็น 00)
+    const [currentTime, setCurrentTime] = useState(new Date());
+
     const [timeHour, setTimeHour] = useState("00");
     const [timeMinute, setTimeMinute] = useState("00");
     const [timeSecond, setTimeSecond] = useState("00");
-    
+
+    // ✅ กู้คืนระบบสลับโหมด เดือน/ปี
     const [viewMode, setViewMode] = useState('month'); 
     const [viewFilter, setViewFilter] = useState({ 
         month: new Date().getMonth(), 
@@ -25,13 +27,29 @@ const CalendarPage = () => {
         title: '',
         description: '',
         visibleTo: [],
-        repeatType: 'none'
+        repeatType: 'none',
+        categoryType: 'normal' 
     });
 
     const userId = localStorage.getItem('user_id');
     const API_URL = window.location.hostname === 'localhost'
         ? 'http://localhost:8080'
         : 'https://lover-backend.onrender.com';
+
+    // ✅ ระบบ Generate ปีอัตโนมัติ (ย้อนหลัง 5 ปี, ไปข้างหน้า 10 ปี)
+    const yearOptions = useMemo(() => {
+        const currentYear = new Date().getFullYear();
+        const years = [];
+        for (let i = currentYear - 5; i <= currentYear + 10; i++) {
+            years.push(i);
+        }
+        return years;
+    }, []);
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         const initPage = async () => {
@@ -57,6 +75,7 @@ const CalendarPage = () => {
         } catch (err) { console.error(err); }
     };
 
+    // ✅ กู้คืน Logic การกรองแบบเลือก เดือน+ปี หรือ ปีอย่างเดียว
     const filteredOverview = useMemo(() => {
         return events.filter(ev => {
             const evDate = new Date(ev.event_date);
@@ -66,79 +85,84 @@ const CalendarPage = () => {
             const isMonthly = ev.repeat_type === 'monthly';
             const isDaily = ev.repeat_type === 'daily';
 
+            // ถ้าเลือกโหมดปี: โชว์ทุกอย่างในปีนั้น หรือโชว์พวกตั้งซ้ำที่เข้าเงื่อนไข
             if (viewMode === 'year') {
                 return evYear === viewFilter.year || isYearly || isMonthly || isDaily;
             }
+            
+            // ถ้าเลือกโหมดเดือน: ต้องตรงทั้งเดือนและปี
             const matchYear = evYear === viewFilter.year || isYearly;
             const matchMonth = evMonth === viewFilter.month || isMonthly || isDaily;
             return matchYear && matchMonth;
         });
     }, [events, viewFilter, viewMode]);
 
-    const getDaysLeft = (eventDate) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const target = new Date(eventDate);
-        target.setHours(0, 0, 0, 0);
-        const yearlyTarget = new Date(target);
-        yearlyTarget.setFullYear(today.getFullYear());
-        if (yearlyTarget < today) yearlyTarget.setFullYear(today.getFullYear() + 1);
-        const diff = yearlyTarget - today;
-        return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    const getDetailedCountdown = (eventDate, repeatType) => {
+        const now = currentTime; 
+        let target = new Date(eventDate);
+
+        if (repeatType === 'yearly') {
+            target.setFullYear(now.getFullYear());
+            if (target < now) target.setFullYear(now.getFullYear() + 1);
+        } else if (repeatType === 'monthly') {
+            target.setFullYear(now.getFullYear());
+            target.setMonth(now.getMonth());
+            if (target < now) target.setMonth(now.getMonth() + 1);
+        }
+
+        const diff = target - now;
+        if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+
+        return {
+            days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+            hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+            minutes: Math.floor((diff / 1000 / 60) % 60),
+            seconds: Math.floor((diff / 1000) % 60)
+        };
     };
 
-   // ค้นหาฟังก์ชัน handleSubmit ใน CalendarPage.jsx แล้วเปลี่ยนตรงนี้:
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const combinedDate = new Date(date);
+            combinedDate.setHours(parseInt(timeHour));
+            combinedDate.setMinutes(parseInt(timeMinute));
+            combinedDate.setSeconds(parseInt(timeSecond));
+            combinedDate.setMilliseconds(0);
 
-const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-        const combinedDate = new Date(date);
-        combinedDate.setHours(parseInt(timeHour));
-    combinedDate.setMinutes(parseInt(timeMinute));
-    combinedDate.setSeconds(0); // ✅ บังคับเป็น 0 เพื่อให้ตรงกับเงื่อนไขใน Backend
-    combinedDate.setMilliseconds(0); // ✅ บังคับมิลลิวินาทีเป็น 0
+            const payload = {
+                event_date: combinedDate.toISOString(), 
+                title: formData.title,
+                description: formData.description,
+                created_by: userId,
+                visible_to: formData.visibleTo,
+                repeat_type: formData.repeatType,
+                is_special: formData.categoryType === 'special', 
+                category_type: formData.categoryType 
+            };
 
-        const payload = {
-            event_date: combinedDate.toISOString(), 
-            title: formData.title,
-            description: formData.description,
-            created_by: userId,
-            visible_to: formData.visibleTo,
-            repeat_type: formData.repeatType,
-            is_special: true // ✅ บังคับให้เป็นวันสำคัญเพื่อแสดงหน้า Home
-        };
+            await axios.post(`${API_URL}/api/events/create`, payload);
+            alert(`🔔 บันทึกนัดหมายสำเร็จ!`);
+            
+            setFormData({ title: '', description: '', visibleTo: [], repeatType: 'none', categoryType: 'normal' });
+            fetchEvents();
+        } catch (err) {
+            console.error(err);
+            alert("เกิดข้อผิดพลาดในการบันทึก");
+        }
+    };
 
-        // ส่งข้อมูลไปบันทึก
-        await axios.post(`${API_URL}/api/events/create`, payload);
-        
-        // ✨ ส่งการแจ้งเตือนไป Discord ทันทีเมื่อบันทึกใหม่ (ถ้า Backend ยังไม่ทำส่วนนี้)
-        // หรือพึ่งพา Backend Cron Job ก็ได้ แต่ Payload ต้องเป๊ะ
-        
-        alert(`🔔 บันทึกนัดหมายสำเร็จ! ระบบจะแจ้งเตือน Discord ในวันที่ ${combinedDate.toLocaleDateString('th-TH')} เวลา ${timeHour}:${timeMinute} น.`);
-        
-        setTimeHour("00"); setTimeMinute("00"); setTimeSecond("00");
-        setFormData({ title: '', description: '', visibleTo: [], repeatType: 'none' });
-        fetchEvents();
-    } catch (err) {
-        console.error(err);
-        alert("เกิดข้อผิดพลาดในการบันทึก");
-    }
-};
-
-    // ✨ 2. แก้ไขฟังก์ชันลบ (เพิ่มการส่ง Title ไปแจ้งเตือน Discord)
-const deleteEvent = async (id, title) => {
-    if (!window.confirm(`ต้องการลบกิจกรรม "${title}" ใช่หรือไม่?`)) return;
-    try {
-        // ส่ง ID และ Title ไปยัง Backend เพื่อให้ Backend ส่ง Discord แจ้งลบ
-        await axios.delete(`${API_URL}/api/events/delete?id=${id}&title=${encodeURIComponent(title)}&user_id=${userId}`);
-        
-        setEvents(prev => prev.filter(ev => ev.id !== id));
-        alert("ลบรายการสำเร็จ และแจ้งเตือนการลบไปที่ Discord แล้ว ✨");
-    } catch (err) {
-        console.log("Error deleting event:", err);
-        alert("ลบไม่สำเร็จ");
-    }
-};
+    const deleteEvent = async (id, title) => {
+        if (!window.confirm(`ต้องการลบกิจกรรม "${title}" ใช่หรือไม่?`)) return;
+        try {
+            await axios.delete(`${API_URL}/api/events/delete?id=${id}&title=${encodeURIComponent(title)}&user_id=${userId}`);
+            setEvents(prev => prev.filter(ev => ev.id !== id));
+            alert("ลบรายการสำเร็จ ✨");
+        } catch (err) {
+            console.error(err);
+            alert("ลบไม่สำเร็จ");
+        }
+    };
 
     const tileContent = ({ date, view }) => {
         if (view === 'month' && events.length > 0) {
@@ -153,6 +177,13 @@ const deleteEvent = async (id, title) => {
         }
     };
 
+    const handleActiveDateChange = ({ activeStartDate }) => {
+    setViewFilter({
+        month: activeStartDate.getMonth(),
+        year: activeStartDate.getFullYear()
+    });
+};
+
     if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-rose-50 text-rose-500 font-bold animate-pulse uppercase italic tracking-tighter">Prepare Calendar... ❤️</div>;
 
     return (
@@ -165,22 +196,18 @@ const deleteEvent = async (id, title) => {
                 {/* Form Section */}
                 <div className="bg-white p-6 rounded-3xl shadow-sm border-2 border-rose-100">
                     <h2 className="text-xl font-bold text-slate-700 mb-4 flex items-center gap-2">
-                        <Bell className="text-rose-400" /> เพิ่มวันพิเศษ
+                        <Bell className="text-rose-400" /> เพิ่มกิจกรรม
                     </h2>
                     <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input className="p-3 bg-slate-50 border-2 border-slate-100 rounded-xl" placeholder="หัวข้อ" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required />
                         
-                        {/* ✨ ระบบเลือกเวลาละเอียด ชม:น:ว */}
                         <div className="flex gap-2">
-                            <div className="relative flex-1">
-                                <Clock className="absolute left-2.5 top-3.5 text-slate-400" size={16} />
-                                <select className="w-full p-3 pl-8 bg-slate-50 border-2 border-slate-100 rounded-xl text-xs font-bold outline-none" value={timeHour} onChange={(e) => setTimeHour(e.target.value)}>
-                                    {Array.from({length: 24}, (_, i) => {
-                                        const h = i.toString().padStart(2, '0');
-                                        return <option key={h} value={h}>{h} นาฬิกา</option>
-                                    })}
-                                </select>
-                            </div>
+                            <select className="flex-1 p-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-xs font-bold outline-none" value={timeHour} onChange={(e) => setTimeHour(e.target.value)}>
+                                {Array.from({length: 24}, (_, i) => {
+                                    const h = i.toString().padStart(2, '0');
+                                    return <option key={h} value={h}>{h} นาฬิกา</option>
+                                })}
+                            </select>
                             <select className="flex-1 p-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-xs font-bold outline-none" value={timeMinute} onChange={(e) => setTimeMinute(e.target.value)}>
                                 {Array.from({length: 60}, (_, i) => {
                                     const m = i.toString().padStart(2, '0');
@@ -195,129 +222,157 @@ const deleteEvent = async (id, title) => {
                             </select>
                         </div>
 
-                        <input className="p-3 bg-slate-50 border-2 border-slate-100 rounded-xl col-span-1 md:col-span-2" placeholder="รายละเอียดเพิ่มเติม..." value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+                        <div className="col-span-1 md:col-span-2 space-y-2">
+                            <label className="text-xs font-bold text-slate-400">ประเภทกิจกรรม</label>
+                            <div className="flex gap-2">
+                                {[
+                                    {id: 'normal', label: 'วันธรรมดา'},
+                                    {id: 'important', label: 'วันสำคัญ'},
+                                    {id: 'special', label: 'วันพิเศษ (รายการสำคัญ)'}
+                                ].map(cat => (
+                                    <button key={cat.id} type="button" onClick={() => setFormData({ ...formData, categoryType: cat.id })} className={`flex-1 py-3 rounded-xl text-[10px] font-bold uppercase transition-all ${formData.categoryType === cat.id ? 'bg-rose-500 text-white shadow-md' : 'bg-slate-100 text-slate-500'}`}>
+                                        {cat.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <input className="p-3 bg-slate-50 border-2 border-slate-100 rounded-xl col-span-1 md:col-span-2" placeholder="รายละเอียด..." value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
 
                         <div className="col-span-1 md:col-span-2 space-y-2">
-                            <label className="text-xs font-bold text-slate-400 flex items-center gap-1"><RefreshCw size={14} /> วนซ้ำการแจ้งเตือน</label>
+                            <label className="text-xs font-bold text-slate-400">วนซ้ำ</label>
                             <div className="flex flex-wrap gap-2">
                                 {['none', 'daily', 'monthly', 'yearly'].map(type => (
-                                    <button key={type} type="button" onClick={() => setFormData({ ...formData, repeatType: type })} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase transition-all ${formData.repeatType === type ? 'bg-rose-500 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                                    <button key={type} type="button" onClick={() => setFormData({ ...formData, repeatType: type })} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase transition-all ${formData.repeatType === type ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
                                         {type === 'none' ? 'ครั้งเดียว' : type}
                                     </button>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-slate-400 flex items-center gap-1"><Users size={14} /> แชร์กับใคร?</label>
-                            <div className="flex flex-wrap gap-2">
-                                {users.map(u => (
-                                    <button key={u.id} type="button" onClick={() => {
-                                        const next = formData.visibleTo.includes(u.id) ? formData.visibleTo.filter(id => id !== u.id) : [...formData.visibleTo, u.id];
-                                        setFormData({ ...formData, visibleTo: next });
-                                    }} className={`px-3 py-1 rounded-full text-[10px] font-bold ${formData.visibleTo.includes(u.id) ? 'bg-rose-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400'}`}>{u.username}</button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <button type="submit" className="bg-rose-500 text-white font-black py-3 rounded-xl hover:bg-rose-600 shadow-lg shadow-rose-200 transition-all uppercase text-sm tracking-widest col-span-1 md:col-span-2">บันทึกนัดหมาย ✨</button>
+                        <button type="submit" className="bg-rose-500 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm col-span-1 md:col-span-2">บันทึก ✨</button>
                     </form>
                 </div>
 
-                {/* ภาพรวมวันสำคัญ */}
+                {/* ✨ รายการสำคัญ (Countdown) */}
                 <div className="bg-white p-6 rounded-3xl shadow-sm border-2 border-rose-100">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <h2 className="text-xl font-bold text-rose-600 mb-4 flex items-center gap-2 italic">
+                        <Star className="text-yellow-400" fill="currentColor" /> รายการสำคัญ
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {events.filter(ev => ev.category_type === 'special').map(ev => {
+                            const time = getDetailedCountdown(ev.event_date, ev.repeat_type);
+                            return (
+                                <div key={ev.id} className="p-4 bg-rose-50/50 rounded-2xl border-2 border-rose-100 group transition-all">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <p className="font-black text-slate-700">{ev.title}</p>
+                                        <Trash2 size={14} className="text-rose-200 hover:text-rose-500 cursor-pointer" onClick={() => deleteEvent(ev.id, ev.title)}/>
+                                    </div>
+                                    <div className="grid grid-cols-4 gap-2 text-center">
+                                        {[
+                                            {v: time.days, l: 'วัน'}, {v: time.hours, l: 'ชม.'}, 
+                                            {v: time.minutes, l: 'นาที'}, {v: time.seconds, l: 'วิ.'}
+                                        ].map((t, idx) => (
+                                            <div key={idx} className="bg-white py-2 rounded-xl border border-rose-50 shadow-sm">
+                                                <p className="text-lg font-black text-rose-500">{t.v}</p>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">{t.l}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-2 text-right">
+                                        <span className="text-[8px] font-bold text-rose-300 uppercase italic">
+                                            {ev.repeat_type !== 'none' ? `แจ้งเตือน: ${ev.repeat_type}` : ''}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* ✅ กู้คืนระบบ ภาพรวมปฏิทิน: สลับโหมด เดือน+ปี / ปีอย่างเดียว */}
+                <div className="bg-white p-6 rounded-3xl shadow-sm border-2 border-rose-100">
+                    <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                         <h2 className="text-xl font-bold text-slate-700 flex items-center gap-2">
-                            <Filter className="text-rose-400" size={20} /> ภาพรวมวันสำคัญ
+                            <Filter className="text-rose-400" size={20} /> ภาพรวมปฏิทิน
                         </h2>
                         <div className="flex flex-wrap gap-2 items-center">
-                            <div className="bg-rose-50 p-1 rounded-xl flex gap-1 mr-2">
-                                <button onClick={() => setViewMode('month')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${viewMode === 'month' ? 'bg-white text-rose-500 shadow-sm' : 'text-rose-300'}`}>Month</button>
-                                <button onClick={() => setViewMode('year')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${viewMode === 'year' ? 'bg-white text-rose-500 shadow-sm' : 'text-rose-300'}`}>Year</button>
+                            {/* ปุ่มสลับโหมด */}
+                            <div className="bg-rose-50 p-1 rounded-xl flex gap-1 mr-2 border border-rose-100">
+                                <button onClick={() => setViewMode('month')} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${viewMode === 'month' ? 'bg-white text-rose-500 shadow-sm' : 'text-rose-300'}`}>Month</button>
+                                <button onClick={() => setViewMode('year')} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${viewMode === 'year' ? 'bg-white text-rose-500 shadow-sm' : 'text-rose-300'}`}>Year</button>
                             </div>
+                            
+                            {/* ตัวเลือกเดือน (ปรากฏเฉพาะโหมด Month) */}
                             {viewMode === 'month' && (
-                                <select className="p-2 rounded-xl bg-rose-50 border-none text-xs font-bold text-rose-600 outline-none" value={viewFilter.month} onChange={(e) => setViewFilter({...viewFilter, month: parseInt(e.target.value)})}>
-                                    {Array.from({length: 12}, (_, i) => (<option key={i} value={i}>{new Date(0, i).toLocaleString('th-TH', {month: 'long'})}</option>))}
+                                <select 
+                                    className="p-2 rounded-xl bg-rose-50 border-none text-xs font-bold text-rose-600 outline-none" 
+                                    value={viewFilter.month} 
+                                    onChange={(e) => setViewFilter({...viewFilter, month: parseInt(e.target.value)})}
+                                >
+                                    {Array.from({length: 12}, (_, i) => (
+                                        <option key={i} value={i}>{new Date(0, i).toLocaleString('en-GB', {month: 'long'})}</option>
+                                    ))}
                                 </select>
                             )}
-                            <select className="p-2 rounded-xl bg-rose-50 border-none text-xs font-bold text-rose-600 outline-none" value={viewFilter.year} onChange={(e) => setViewFilter({...viewFilter, year: parseInt(e.target.value)})}>
-                                {[2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030].map(y => (<option key={y} value={y}>{y}</option>))}
+                            
+                            {/* ตัวเลือกปี (Dynamic Range: ย้อน 5 หน้า 10) */}
+                            <select 
+                                className="p-2 rounded-xl bg-rose-50 border-none text-xs font-bold text-rose-600 outline-none" 
+                                value={viewFilter.year} 
+                                onChange={(e) => setViewFilter({...viewFilter, year: parseInt(e.target.value)})}
+                            >
+                                {yearOptions.map(y => (<option key={y} value={y}>{y}</option>))}
                             </select>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[300px] overflow-y-auto pr-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                         {filteredOverview.length > 0 ? (
                             filteredOverview.sort((a, b) => new Date(a.event_date) - new Date(b.event_date)).map(ev => (
-                                <div key={`ov-${ev.id}`} className="p-3 bg-rose-50/50 rounded-2xl border border-rose-100">
-                                    <p className="font-black text-rose-600 text-sm truncate">{ev.title}</p>
-                                    <div className="flex justify-between items-center mt-1">
-                                        <p className="text-[10px] text-slate-400 font-bold">{new Date(ev.event_date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}</p>
-                                        <span className="text-[9px] bg-white text-rose-400 px-2 py-0.5 rounded-full border border-rose-100 font-black uppercase">{ev.repeat_type}</span>
+                                <div key={`ov-${ev.id}`} className={`p-3 rounded-2xl border transition-all ${ev.category_type === 'special' ? 'bg-amber-50 border-amber-200' : 'bg-rose-50 border-rose-100'}`}>
+                                    <div className="flex justify-between items-center">
+                                        <p className="font-black text-slate-700 text-sm truncate">{ev.title}</p>
+                                        {ev.category_type === 'special' && <Star size={12} fill="currentColor" className="text-amber-400"/>}
                                     </div>
+                                    <p className="text-[10px] text-slate-400 font-bold mt-1">{new Date(ev.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                                 </div>
                             ))
                         ) : (
-                            <p className="text-center col-span-full py-10 text-slate-300 text-xs italic">ไม่มีรายการวันพิเศษ ❤️</p>
+                            <p className="text-center col-span-full py-16 text-slate-300 text-xs italic">ไม่มีรายการที่ตรงกับเงื่อนไข ❤️</p>
                         )}
                     </div>
                 </div>
 
-                {/* Calendar & List Section */}
+                {/* Calendar Section */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white p-4 rounded-3xl shadow-sm border-2 border-rose-100 h-fit">
-                        <Calendar onChange={setDate} value={date} tileContent={tileContent} className="border-none w-full" />
+                        <Calendar 
+    onChange={setDate} 
+    value={date} 
+    tileContent={tileContent} 
+    className="border-none w-full"
+    // ✅ เพิ่มบรรทัดนี้เพื่อให้ Dropdown ด้านบนเปลี่ยนตามการกดลูกศรในปฏิทิน
+    onActiveStartDateChange={handleActiveDateChange}
+/>
                     </div>
-
-                    <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2">
-                        {events.filter(ev => ev.repeat_type === 'yearly').map(ev => {
-                            const days = getDaysLeft(ev.event_date);
-                            if (days >= 0 && days <= 7) return (
-                                <div key={`cd-${ev.id}`} className="bg-amber-50 border-2 border-amber-200 p-3 rounded-2xl animate-pulse">
-                                    <p className="text-amber-600 text-[11px] font-black uppercase">🔥 อีก {days === 0 ? "วันนี้แล้ว!" : `${days} วัน`} : {ev.title}</p>
-                                </div>
-                            );
-                            return null;
-                        })}
-
-                        <h3 className="font-bold text-slate-500 sticky top-0 bg-rose-50 py-1 text-sm border-b-2 border-rose-100">📅 รายการวันที่ {date.toLocaleDateString('th-TH')}</h3>
-                        
+                    <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+                        <h3 className="font-bold text-slate-500 sticky top-0 bg-rose-50 py-1 text-sm border-b-2 border-rose-100">📅 รายการวันที่ {date.toLocaleDateString('en-GB')}</h3>
                         {events.filter(ev => {
                             const d = new Date(ev.event_date);
                             if (ev.repeat_type === 'yearly') return d.getDate() === date.getDate() && d.getMonth() === date.getMonth();
                             if (ev.repeat_type === 'monthly') return d.getDate() === date.getDate();
                             if (ev.repeat_type === 'daily') return true;
                             return d.toDateString() === date.toDateString();
-                        }).length > 0 ? (
-                            events.filter(ev => {
-                                const d = new Date(ev.event_date);
-                                if (ev.repeat_type === 'yearly') return d.getDate() === date.getDate() && d.getMonth() === date.getMonth();
-                                if (ev.repeat_type === 'monthly') return d.getDate() === date.getDate();
-                                if (ev.repeat_type === 'daily') return true;
-                                return d.toDateString() === date.toDateString();
-                            }).map(event => (
-                                <div key={event.id} className="bg-white p-4 rounded-2xl border-l-4 border-rose-400 shadow-sm flex justify-between items-center group">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <p className="font-black text-rose-600">{event.title}</p>
-                                            <span className="text-[10px] bg-rose-50 text-rose-400 px-2 py-0.5 rounded-md font-bold">
-                                                {new Date(event.event_date).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                            </span>
-                                        </div>
-                                        <p className="text-[11px] text-slate-400 mt-1">{event.description}</p>
-                                    </div>
-                                    {event.created_by === userId && (
-                                        <button onClick={() => deleteEvent(event.id, event.title)} className="text-slate-200 hover:text-rose-500 p-2 transition-colors">
-                                            <Trash2 size={16} />
-                                        </button>
-                                    )}
+                        }).map(event => (
+                            <div key={event.id} className={`bg-white p-4 rounded-2xl border-l-4 shadow-sm flex justify-between items-center ${event.category_type === 'special' ? 'border-amber-400' : 'border-rose-400'}`}>
+                                <div>
+                                    <p className="font-black text-slate-700">{event.title}</p>
+                                    <p className="text-[10px] text-slate-400 truncate max-w-[150px] font-bold">{event.description}</p>
                                 </div>
-                            ))
-                        ) : (
-                            <div className="text-center py-10 bg-white/50 rounded-3xl border-2 border-dashed border-slate-100">
-                                <p className="text-slate-300 italic text-xs">วันนี้ยังว่างอยู่... ❤️</p>
+                                <Trash2 size={16} className="text-slate-200 hover:text-rose-500 cursor-pointer transition-colors" onClick={() => deleteEvent(event.id, event.title)}/>
                             </div>
-                        )}
+                        ))}
                     </div>
                 </div>
             </div>
