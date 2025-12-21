@@ -1,84 +1,60 @@
 import React from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Home, 
-  Calendar as CalendarIcon, 
-  PlusCircle, 
-  History, 
-  LogOut 
-} from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Heart, Calendar, Send, History, LogOut } from 'lucide-react';
 
 const Navbar = () => {
-  const username = localStorage.getItem('username');
-  const navigate = useNavigate();
   const location = useLocation();
+  const username = localStorage.getItem('username') || '';
+  const avatarUrl = localStorage.getItem('avatar_url');
 
   const handleLogout = () => {
-    localStorage.clear();
-    navigate('/login');
+    if (window.confirm("คุณต้องการออกจากระบบใช่หรือไม่? ❤️")) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
   };
 
-  const navItemClass = (path) => `flex flex-col items-center gap-1 transition-all ${
-    location.pathname === path ? 'text-rose-500 scale-110' : 'text-slate-400 hover:text-rose-500'
-  }`;
+  const navItems = [
+    { name: 'Home', path: '/', icon: <Heart size={20} /> },
+    { name: 'Calendar', path: '/calendar', icon: <Calendar size={20} /> },
+    { name: 'Request', path: '/create', icon: <Send size={20} /> },
+    { name: 'History', path: '/history', icon: <History size={20} /> },
+  ];
+
+  if (location.pathname === '/login' || location.pathname === '/register') return null;
 
   return (
-    <nav className="bg-white/80 backdrop-blur-md p-3 md:p-4 sticky top-0 z-50 border-b border-rose-50">
+    <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-[100] border-b border-rose-100 shadow-sm px-4 py-2">
       <div className="max-w-6xl mx-auto flex justify-between items-center">
-        {/* ชื่อแอป: ย่อขนาดในมือถือ */}
-        <Link to="/" className="text-lg md:text-2xl font-black text-rose-500 italic uppercase tracking-tighter flex items-center gap-1">
-          Lover<span className="text-slate-300 md:text-slate-300">Req</span>
-          <span className="text-[10px] font-normal not-italic text-slate-300 hidden md:inline ml-1">0507</span>
+        <Link to="/" className="flex items-center gap-2 group">
+          <div className="bg-rose-500 p-2 rounded-2xl shadow-lg group-hover:scale-110 transition-transform">
+            <Heart className="text-white" fill="white" size={20} />
+          </div>
+          <span className="text-xl font-black text-rose-600 italic tracking-tighter hidden sm:block">LOVER REQ</span>
         </Link>
 
-        {/* เมนู: ปรับระยะห่างให้พอดีกับจอทุกขนาด */}
-        <div className="flex items-center gap-3 md:gap-6 font-bold uppercase tracking-widest">
-          <Link to="/" className={navItemClass('/')}>
-            <Home size={18} className="md:w-5 md:h-5" />
-            <span className="text-[8px] md:text-[9px] font-black">HOME</span>
-          </Link>
-
-          {username ? (
-            <>
-              <button onClick={() => navigate('/calendar')} className={navItemClass('/calendar')}>
-                <CalendarIcon size={18} className="md:w-5 md:h-5" />
-                <span className="text-[8px] md:text-[9px] font-black">CALENDAR</span>
-              </button>
-
-              <Link to="/create" className={navItemClass('/create')}>
-                <PlusCircle size={18} className="md:w-5 md:h-5" />
-                <span className="text-[8px] md:text-[9px] font-black">REQUEST</span>
-              </Link>
-
-              <Link to="/history" className={navItemClass('/history')}>
-                <History size={18} className="md:w-5 md:h-5" />
-                <span className="text-[8px] md:text-[9px] font-black">HISTORY</span>
-              </Link>
-
-              <div className="flex items-center gap-4">
-    <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition-all">
-        {/* แสดงรูปโปรไฟล์จิ๋ว ถ้าไม่มีให้แสดงไอคอนวงกลม */}
-        <div className="w-8 h-8 rounded-full bg-rose-200 border-2 border-white overflow-hidden shadow-sm">
-            <img src={localStorage.getItem('user_avatar') || 'https://via.placeholder.com/150'} alt="profile" className="w-full h-full object-cover" />
-        </div>
-        <span className="text-sm font-bold text-slate-600 hidden md:block">
-            {localStorage.getItem('username')}
-        </span>
-    </Link>
-</div>
-              
-              <button 
-                onClick={handleLogout} 
-                className="ml-1 md:ml-2 bg-rose-50 text-rose-500 p-2 md:px-4 md:py-2 rounded-lg md:rounded-xl hover:bg-rose-500 hover:text-white transition-all border border-rose-100 flex items-center gap-2"
-              >
-                <LogOut size={16} />
-                <span className="text-[10px] hidden md:block">LOGOUT</span>
-              </button>
-            </>
-          ) : (
-            <Link to="/login" className="text-slate-500 px-3 py-2 rounded-xl hover:bg-slate-50 transition-all text-[10px] md:text-[11px]">
-              LOGIN
+        <div className="flex items-center gap-1 sm:gap-4">
+          {navItems.map((item) => (
+            <Link key={item.name} to={item.path} className={`flex flex-col items-center p-2 rounded-xl transition-all ${location.pathname === item.path ? 'bg-rose-50 text-rose-500' : 'text-slate-400 hover:text-rose-400'}`}>
+              {item.icon}
+              <span className="text-[10px] font-bold uppercase mt-1 hidden xs:block">{item.name}</span>
             </Link>
+          ))}
+
+          {username && (
+            <div className="flex items-center gap-2 ml-2 pl-2 border-l border-slate-100">
+              <Link to="/profile" className="flex items-center gap-2 group">
+                <img 
+                  src={avatarUrl && avatarUrl !== 'null' ? avatarUrl : `https://ui-avatars.com/api/?name=${username}&background=random`} 
+                  className="w-10 h-10 rounded-full border-2 border-white shadow-md object-cover group-hover:border-rose-300 transition-all"
+                  alt="Avatar"
+                />
+                <span className="text-sm font-black text-slate-700 uppercase hidden md:block">{username}</span>
+              </Link>
+              <button onClick={handleLogout} className="text-rose-500 p-2 rounded-xl hover:bg-rose-50 transition-all">
+                <LogOut size={18} />
+              </button>
+            </div>
           )}
         </div>
       </div>

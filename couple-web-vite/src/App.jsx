@@ -6,6 +6,7 @@ import HistoryPage from './pages/HistoryPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import CalendarPage from './pages/CalendarPage';
+import ProfilePage from './pages/ProfilePage';
 
 // Component ตรวจสอบการล็อกอิน
 const ProtectedRoute = ({ children }) => {
@@ -52,7 +53,16 @@ function App() {
             </ProtectedRoute>
           } 
         />
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
+      
       
     </Router>
   );
