@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Calendar, Send, History, LogOut, LogIn } from 'lucide-react';
+// ✨ เพิ่ม Home เข้ามาในรายการ import
+import { Home, Calendar, Send, History, LogOut, LogIn } from 'lucide-react';
 
 const Navbar = () => {
   const location = useLocation();
@@ -15,7 +16,8 @@ const Navbar = () => {
   };
 
   const navItems = [
-    { name: 'Home', path: '/', icon: <Calendar size={18} /> }, // หรือใช้ไอคอนอื่นตามเหมาะสม
+    // ✨ เปลี่ยนจาก Calendar เป็น Home และใช้ไอคอน <Home />
+    { name: 'Home', path: '/', icon: <Home size={18} /> }, 
     { name: 'Calendar', path: '/calendar', icon: <Calendar size={18} /> },
     { name: 'Request', path: '/create', icon: <Send size={18} /> },
     { name: 'History', path: '/history', icon: <History size={18} /> },
@@ -27,10 +29,9 @@ const Navbar = () => {
     <nav className="bg-white sticky top-0 z-[100] border-b border-rose-100 px-4 py-2">
       <div className="max-w-6xl mx-auto flex justify-between items-center">
         
-        {/* ✅ ส่วนที่ 1: เปลี่ยนชื่อเป็น Lover และเปลี่ยนไอคอนหัวใจเป็นรูปคู่รัก */}
+        {/* ✅ ส่วนที่ 1: โลโก้และรูปคู่รัก */}
         <Link to="/" className="flex items-center gap-2 group">
           <div className="w-9 h-9 rounded-xl shadow-md overflow-hidden group-hover:rotate-12 transition-transform">
-            {/* 💖 ใส่ URL รูปคู่รักของคุณตรงนี้ครับ */}
             <img 
               src="/Photo on 16-7-2568 BE at 09.35.jpg" 
               alt="Couple Icon" 
@@ -40,7 +41,7 @@ const Navbar = () => {
           <span className="text-xl font-black text-rose-600 italic tracking-tighter uppercase">LOVER</span>
         </Link>
 
-        {/* ส่วนที่ 2 & 3: เมนูและสถานะผู้ใช้ (คงเดิม) */}
+        {/* ส่วนที่ 2 & 3: เมนูและสถานะผู้ใช้ */}
         <div className="flex items-center gap-1 sm:gap-2">
           {username && navItems.map((item) => (
             <Link 
