@@ -7,41 +7,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../ThemeConstants';
 import SeasonalOverlay from "../components/SeasonalOverlay";
 
+// ✅ 1. ข้อมูลรูปภาพ Slideshow แยกตามอุปกรณ์
 const PHOTO_DATA = [
-  { 
-    pc: "/mb1.jpg", 
-    mobile: "/com1.jpg", 
-    caption: "วันแรกที่เราเจอกัน ❤️" 
-  },
-  { 
-    pc: "/mb2.jpg", 
-    mobile: "/com2.jpg", 
-    caption: "ทริปทะเลแสนหวาน 🌊" 
-  },
-  { 
-    pc: "/mb3.jpg", 
-    mobile: "/com3.jpg", 
-    caption: "ดินเนอร์สุดพิเศษของเรา ✨" 
-  },
-  { 
-    pc: "/mb4.jpg", 
-    mobile: "/com4.jpg",
-    caption: "การผจญภัยที่ไม่มีวันลืม 🏞️"
-  },
-  { 
-    pc: "/mb5.jpg", 
-    mobile: "/com5.jpg", 
-    caption: "ช่วงเวลาที่แสนอบอุ่นด้วยกัน 🥰" 
-  }
+  { pc: "/com1.jpg", mobile: "/mb1.jpg", caption: "วันแรกที่เราเจอกัน ❤️" },
+  { pc: "/com2.jpg", mobile: "/mb2.jpg", caption: "ทริปทะเลแสนหวาน 🌊" },
+  { pc: "/com3.jpg", mobile: "/mb3.jpg", caption: "ดินเนอร์สุดพิเศษของเรา ✨" },
+  { pc: "/com4.jpg", mobile: "/mb4.jpg", caption: "การผจญภัยที่ไม่มีวันลืม 🏞️" },
+  { pc: "/com5.jpg", mobile: "/mb5.jpg", caption: "ช่วงเวลาที่แสนอบอุ่นด้วยกัน 🥰" }
 ];
 
-// ✅ 1. กำหนดรูปภาพสำหรับแสดงประจำที่ 5 รูป (เปลี่ยนชื่อไฟล์ตามใจชอบ)
+// ✅ 2. รูปภาพแสดงประจำที่ 5 รูปหลังระเบิดเสร็จ
 const FIXED_PHOTOS = [
-  "/mb6.jpg", // รูปซ้าย 1
-  "/mb7.jpg", // รูปซ้าย 2
-  "/mb9.jpg", // รูปซ้าย 3
-  "/mb10.jpg", // รูปขวา 1
-  "/mb11.jpg"  // รูปขวา 2
+  "/mb6.jpg", "/mb7.jpg", "/mb9.jpg", "/mb10.jpg", "/mb11.jpg"
 ];
 
 const CountdownUnit = ({ value, unit }) => (
@@ -56,7 +33,7 @@ const generateMosaicPieces = () => {
   const rows = isMobile ? 5 : 10; 
   const cols = isMobile ? 5 : 10; 
   
-  // ✅ 2. เลือกรูป Mosaic ตามประเภทอุปกรณ์
+  // ✅ เลือกรูป Mosaic ตามประเภทอุปกรณ์ (คอมใช้ com2, มือถือใช้ mb8)
   const mosaicPhoto = isMobile ? "/mb8.jpg" : "/com2.jpg";
 
   const pieces = [];
@@ -69,7 +46,7 @@ const generateMosaicPieces = () => {
         bgPosX: c === 0 ? 0 : (c * 100) / (cols - 1), bgPosY: r === 0 ? 0 : (r * 100) / (rows - 1),
         midX: targetX + (Math.cos(r + c) * 25), midY: targetY + (Math.sin(r + c) * 25),
         delay: (r * 0.05) + (c * 0.03), bgSizeX: cols * 100.1, bgSizeY: rows * 100.1,
-        photo: mosaicPhoto // เก็บค่ารูปไว้ในแต่ละชิ้น
+        photo: mosaicPhoto 
       });
     }
   }
@@ -95,6 +72,9 @@ const HomePage = () => {
   const [isExploding, setIsExploding] = useState(false);
   const [showFixedPhotos, setShowFixedPhotos] = useState(false);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
+
+  // ✅ แก้ไขปัญหา 'isMobileView' is not defined
+  const isMobileView = typeof window !== 'undefined' && window.innerWidth < 768;
   
   const mosaicPieces = useMemo(() => generateMosaicPieces(), []);
   const userId = localStorage.getItem('user_id');
@@ -138,8 +118,10 @@ const HomePage = () => {
         }, 5000 - diff);
         return () => { clearTimeout(initTimer); clearTimeout(mainTimer); };
       } else {
-        const showTimer = setTimeout(() => setShowFixedPhotos(true), 0);
-        localStorage.removeItem('isExploded'); localStorage.removeItem('explosionTimestamp');
+        const showTimer = setTimeout(() => {
+          setShowFixedPhotos(true);
+          localStorage.removeItem('isExploded'); localStorage.removeItem('explosionTimestamp');
+        }, 0);
         return () => clearTimeout(showTimer);
       }
     }
@@ -186,7 +168,7 @@ const HomePage = () => {
             transition={{ duration: 40, ease: "circOut", times: [0, 0.03, 0.08, 0.95, 1], delay: p.delay }}
             style={{ 
               width: `${p.width}vw`, height: `${p.height}vh`, position: 'fixed', zIndex: 9999, pointerEvents: 'none',
-              backgroundImage: `url("${p.photo}")`, // ✅ ใช้รูปที่เลือกตามขนาดจอ
+              backgroundImage: `url("${p.photo}")`, 
               backgroundSize: `${p.bgSizeX}% ${p.bgSizeY}%`, 
               backgroundPosition: `${p.bgPosX}% ${p.bgPosY}%`, backgroundRepeat: 'no-repeat', border: 'none', outline: 'none',
             }}
@@ -196,7 +178,6 @@ const HomePage = () => {
 
       <div className="max-w-7xl w-full mx-auto flex flex-col lg:flex-row gap-6 md:gap-12 items-center justify-center z-10">
         
-        {/* ✅ รูปประจำที่ฝั่งซ้าย (3 รูปใหม่) */}
         <div className="hidden lg:flex flex-col gap-6 absolute left-4 xl:left-10 top-1/4 z-20">
           {showFixedPhotos && (
             <>
@@ -216,7 +197,8 @@ const HomePage = () => {
               <AnimatePresence mode='wait'>
                 <motion.img 
                   key={currentImgIndex}
-                  src={PHOTO_DATA[currentImgIndex].url}
+                  // ✅ เลือกรูปตามอุปกรณ์ (PC ใช้ฟิลด์ pc, มือถือใช้ฟิลด์ mobile)
+                  src={isMobileView ? PHOTO_DATA[currentImgIndex].mobile : PHOTO_DATA[currentImgIndex].pc}
                   initial={{ opacity: 0, x: 100 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -100 }}
                   transition={{ duration: 0.4 }}
                   drag="x" dragConstraints={{ left: 0, right: 0 }}
@@ -273,13 +255,14 @@ const HomePage = () => {
             )}
           </div>
 
-          {/* ✅ รูปประจำที่ฝั่งขวา (2 รูปใหม่) */}
-          {showFixedPhotos && (
-            <div className="flex justify-center lg:justify-end gap-4 pt-2 px-2">
-              <FixedPhoto src={FIXED_PHOTOS[3]} rotate={12} isVisible={showFixedPhotos} />
-              <FixedPhoto src={FIXED_PHOTOS[4]} rotate={-8} isVisible={showFixedPhotos} />
-            </div>
-          )}
+          <div className="flex justify-center lg:justify-end gap-4 pt-2 px-2">
+            {showFixedPhotos && (
+              <>
+                <FixedPhoto src={FIXED_PHOTOS[3]} rotate={12} isVisible={showFixedPhotos} />
+                <FixedPhoto src={FIXED_PHOTOS[4]} rotate={-8} isVisible={showFixedPhotos} />
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
