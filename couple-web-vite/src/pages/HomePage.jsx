@@ -6,6 +6,7 @@ import { Star, Heart, Rocket, ClipboardList, ChevronLeft, ChevronRight } from 'l
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../ThemeConstants';
 import SeasonalOverlay from "../components/SeasonalOverlay";
+import PWAHandler from '../components/PWAHandler';
 
 // ✅ 1. ข้อมูลรูปภาพ Slideshow แยกตามอุปกรณ์
 const PHOTO_DATA = [
@@ -155,6 +156,12 @@ const HomePage = () => {
   return (
     <div className={`min-h-screen ${bgStyles[currentTheme.id]} p-4 md:p-8 relative overflow-hidden flex items-center justify-center transition-colors duration-1000`}>
       <SeasonalOverlay themeId={currentTheme.id} />
+
+      {/* ✅ จุดที่ 2: วาง Component ไว้ด้านบนสุดหรือจุดที่เหมาะสม */}
+      {/* ผมแนะนำให้วางไว้บนสุดของเนื้อหา เพื่อให้แฟนกดได้ง่ายครับ */}
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-full max-w-xs">
+          <PWAHandler />
+      </div>
 
       <AnimatePresence>
         {isExploding && mosaicPieces.map((p) => (
