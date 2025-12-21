@@ -95,7 +95,11 @@ const handleAvatarUpload = async (e) => {
     try {
         await axios.patch(`${API_URL}/api/users/update`, {
             id: userId,
-            ...profileData,
+            username: profileData.username,
+            description: profileData.description,
+            gender: profileData.gender,
+            avatar_url: profileData.avatar_url,
+            // ✨ เปลี่ยนจาก passwordValue เป็น confirmPassword ให้ตรงกับ State ของนาย
             confirm_password: confirmPassword 
         });
         
