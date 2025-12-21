@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { RefreshCw, Clock, User, CheckCircle, XCircle, Heart } from 'lucide-react';
+import { RefreshCw, Clock, User, CheckCircle, XCircle, Heart, Maximize2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const HistoryPage = () => {
@@ -9,6 +9,7 @@ const HistoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('pending');
+  const [selectedImg, setSelectedImg] = useState(null); // ✅ สำหรับระบบดูรูปใหญ่
   const userId = localStorage.getItem('user_id');
 
   const API_URL = window.location.hostname === 'localhost'
@@ -21,8 +22,6 @@ const HistoryPage = () => {
     try {
       const res = await axios.get(`${API_URL}/api/my-requests?user_id=${userId}&t=${Date.now()}`);
       if (Array.isArray(res.data)) {
-        // ✅ เรียงตามเวลานาฬิกาสากล (คำขอล่าสุดขึ้นก่อน)
-        // ใช้ created_at หรือ id ที่เป็นลำดับเวลาจากฐานข้อมูล
         const sorted = res.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         setRequests(sorted);
       }
@@ -67,6 +66,24 @@ const HistoryPage = () => {
 
   return (
     <div className="max-w-4xl mx-auto py-6 md:py-12 px-4 pb-24 font-sans min-h-screen">
+      
+      {/* ✅ Image Preview Modal (เมื่อกดดูรูปใหญ่) */}
+      <AnimatePresence>
+        {selectedImg && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
+            onClick={() => setSelectedImg(null)}
+          >
+            <button className="absolute top-6 right-6 text-white bg-white/10 p-2 rounded-full"><X size={24}/></button>
+            <motion.img 
+              initial={{ scale: 0.8 }} animate={{ scale: 1 }}
+              src={selectedImg} className="max-w-full max-h-full rounded-2xl shadow-2xl" 
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex justify-between items-center mb-6 md:mb-10">
         <h2 className="text-2xl md:text-4xl font-black text-slate-800 italic uppercase flex items-center gap-2">History 📋</h2>
         <button onClick={() => refreshList()} className="bg-white border-2 border-rose-100 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-black flex items-center gap-2 text-rose-500 hover:bg-rose-50 transition-colors">
@@ -93,7 +110,6 @@ const HistoryPage = () => {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-white p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] shadow-xl border-2 border-rose-50 relative overflow-hidden group"
             >
-              {/* ❤️ การ์ดรูปหัวใจพื้นหลัง */}
               <div className="absolute -right-6 -bottom-6 text-rose-50 opacity-10 group-hover:opacity-20 transition-opacity">
                 <Heart size={150} fill="currentColor" />
               </div>
@@ -106,11 +122,26 @@ const HistoryPage = () => {
               </div>
               
               <h4 className="text-xl md:text-2xl font-bold text-slate-700 mb-2 relative z-10">{item.title}</h4>
-              
-              {/* 🕒 แสดงเวลาส่งคำขอล่าสุด (นาฬิกาสากล) */}
               <p className="text-[10px] md:text-[11px] text-slate-400 font-black uppercase tracking-tight mb-6 flex items-center gap-1 relative z-10">
                 <Clock size={12} /> ส่งเมื่อ: {new Date(item.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น. · {new Date(item.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
               </p>
+
+              {/* ✅ ส่วนการแสดงรูปภาพที่แนบมา */}
+              {item.image_url && (
+                <div className="mb-8 relative z-10">
+                  <div className="group relative overflow-hidden rounded-[2rem] border-4 border-rose-50 shadow-inner aspect-video bg-slate-50">
+                    <img 
+                      src={item.image_url} 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-zoom-in" 
+                      alt="request-attachment"
+                      onClick={() => setSelectedImg(item.image_url)}
+                    />
+                    <div className="absolute bottom-4 right-4 bg-white/80 backdrop-blur-md p-2 rounded-xl text-rose-500 pointer-events-none">
+                      <Maximize2 size={16}/>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="bg-slate-50 p-6 md:p-8 rounded-[2rem] mb-8 space-y-4 relative z-10 border border-slate-100">
                 <div className="flex justify-between text-xs md:text-sm">
@@ -151,7 +182,6 @@ const HistoryPage = () => {
                 </div>
               )}
 
-              {/* เวลาที่ดำเนินการ (สำหรับหน้าประวัติ) */}
               {item.status !== 'pending' && item.processed_at && (
                 <div className="flex items-center justify-center gap-2 text-[9px] md:text-[11px] font-black text-slate-400 uppercase mt-6 pt-4 border-t border-dashed border-slate-100 relative z-10">
                   <Clock size={12} /> {item.status === 'approved' ? 'อนุมัติเมื่อ:' : 'ปฏิเสธเมื่อ:'} {new Date(item.processed_at).toLocaleString('th-TH')}
