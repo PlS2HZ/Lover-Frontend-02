@@ -16,9 +16,20 @@ const PWAHandler = () => {
   // ✅ เช็คทั้งว่า "ตกลงแล้ว" หรือ "กดปิดทิ้ง" ไปหรือยัง
   const [shouldHide, setShouldHide] = useState(() => {
     const subscribed = localStorage.getItem('pwa_subscribed') === 'true';
-    const dismissed = localStorage.getItem('pwa_dismissed') === 'true';
-    return subscribed || dismissed;
-  });
+    const dismissedAt = localStorage.getItem('pwa_dismissed_at');
+    
+    if (subscribed) return true;
+    if (dismissedAt) {
+        const lastDismissed = parseInt(dismissedAt);
+        const twentyFourHours = 24 * 60 * 60 * 1000; // 24 ชม.
+        if (Date.now() - lastDismissed < twentyFourHours) {
+            return true; // ยังไม่ครบวัน ไม่ต้องโชว์
+        }
+    }
+    return false;
+});
+
+
 
   const userId = localStorage.getItem('user_id');
   const API_URL = window.location.hostname === 'localhost' 
@@ -65,10 +76,10 @@ const PWAHandler = () => {
   };
 
   // ✅ ฟังก์ชันสำหรับกดปิดทิ้ง (ไม่เอาตอนนี้)
-  const handleDismiss = () => {
-    localStorage.setItem('pwa_dismissed', 'true');
+const handleDismiss = () => {
+    localStorage.setItem('pwa_dismissed_at', Date.now().toString()); // เก็บเวลาที่กดปิด
     setShouldHide(true);
-  };
+};
 
   // ถ้าลงทะเบียนแล้ว หรือ กดปิดทิ้งไปแล้ว ไม่ต้องแสดงปุ่ม
   if (shouldHide) return null;
