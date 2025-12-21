@@ -32,7 +32,7 @@ const Navbar = () => {
           <div className="w-9 h-9 rounded-xl shadow-md overflow-hidden group-hover:rotate-12 transition-transform">
             {/* 💖 ใส่ URL รูปคู่รักของคุณตรงนี้ครับ */}
             <img 
-              src="couple-web-vite/public/Photo on 16-7-2568 BE at 09.35.jpg" 
+              src="/Photo on 16-7-2568 BE at 09.35.jpg" 
               alt="Couple Icon" 
               className="w-full h-full object-cover"
             />
