@@ -29,20 +29,20 @@ const ProfilePage = () => {
     // ส่วนที่ต้องเช็คใน ProfilePage.jsx
 const fetchProfile = async () => {
     try {
+        // ✨ ดึงรายชื่อผู้ใช้ทั้งหมด
         const res = await axios.get(`${API_URL}/api/users`);
-        // ตรวจสอบว่าเป็น Array ก่อน Filter เพื่อป้องกัน Error
+        
         if (Array.isArray(res.data)) {
             const currentUser = res.data.find(u => u.id === userId);
             if (currentUser) {
+                // ✅ ต้อง Map ค่าให้ครบทุก Field ตามที่ DB ส่งมา
                 setProfileData({
                     username: currentUser.username || '',
-                    description: currentUser.description || '',
-                    gender: currentUser.gender || 'อื่นๆ',
+                    description: currentUser.description || '', // ✨ เพิ่มบรรทัดนี้
+                    gender: currentUser.gender || 'อื่นๆ',       // ✨ เพิ่มบรรทัดนี้
                     avatar_url: currentUser.avatar_url || ''
                 });
                 setOriginalUsername(currentUser.username);
-                // อัปเดตข้อมูลในเครื่องเผื่อ Navbar ด้วย
-                localStorage.setItem('avatar_url', currentUser.avatar_url || '');
             }
         }
     } catch (err) { 
@@ -93,19 +93,16 @@ const handleAvatarUpload = async (e) => {
     const executeSave = async () => {
     setIsSaving(true);
     try {
+        // ✅ ตรวจสอบว่าส่ง ...profileData (ซึ่งมี gender และ description) ไปครบถ้วน
         await axios.patch(`${API_URL}/api/users/update`, {
             id: userId,
-            ...profileData,
+            ...profileData, 
             confirm_password: confirmPassword 
         });
         
         alert("บันทึกข้อมูลสำเร็จ! ❤️");
-        
-        // ✨ สำคัญ: เรียก fetchProfile ใหม่เพื่อดึงข้อมูลจริงจาก DB มาโชว์
-        await fetchProfile(); 
-        
+        await fetchProfile(); // ✨ ดึงข้อมูลล่าสุดมาโชว์ทันทีหลังบันทึก
         setShowPassModal(false);
-        setConfirmPassword('');
     } catch (err) {
         alert(err.response?.data || "เกิดข้อผิดพลาดในการบันทึก");
     } finally { 

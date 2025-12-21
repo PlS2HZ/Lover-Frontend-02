@@ -16,7 +16,7 @@ const Navbar = () => {
   };
 
   const navItems = [
-    // ✨ เปลี่ยนจาก Calendar เป็น Home และใช้ไอคอน <Home />
+    // ✨ 2. เปลี่ยนไอคอนจาก Calendar เป็น Home
     { name: 'Home', path: '/', icon: <Home size={18} /> }, 
     { name: 'Calendar', path: '/calendar', icon: <Calendar size={18} /> },
     { name: 'Request', path: '/create', icon: <Send size={18} /> },
