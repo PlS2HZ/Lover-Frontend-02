@@ -95,25 +95,18 @@ const handleAvatarUpload = async (e) => {
     try {
         await axios.patch(`${API_URL}/api/users/update`, {
             id: userId,
-            username: profileData.username,
-            description: profileData.description,
-            gender: profileData.gender,
-            avatar_url: profileData.avatar_url,
-            // ✨ เปลี่ยนจาก passwordValue เป็น confirmPassword ให้ตรงกับ State ของนาย
+            ...profileData,
             confirm_password: confirmPassword 
         });
         
         alert("บันทึกข้อมูลสำเร็จ! ❤️");
-        setOriginalUsername(profileData.username);
         
-        // อัปเดตข้อมูลถาวรลงเครื่อง
-        localStorage.setItem('username', profileData.username); 
-        localStorage.setItem('avatar_url', profileData.avatar_url);
+        // ✨ สำคัญ: เรียก fetchProfile ใหม่เพื่อดึงข้อมูลจริงจาก DB มาโชว์
+        await fetchProfile(); 
         
         setShowPassModal(false);
         setConfirmPassword('');
     } catch (err) {
-        // แสดง Error จริงจาก Backend เช่น 'Wrong Password'
         alert(err.response?.data || "เกิดข้อผิดพลาดในการบันทึก");
     } finally { 
         setIsSaving(false); 
