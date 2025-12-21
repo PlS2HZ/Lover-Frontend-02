@@ -3,7 +3,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import axios from 'axios';
-import { Heart, Bell, Trash2, Users, RefreshCw, Clock, Filter, Star } from 'lucide-react';
+// ✅ แก้ไข: เพิ่ม UserPlus และ UserMinus เข้ามาตรงนี้
+import { Heart, Bell, Trash2, Users, RefreshCw, Clock, Filter, Star, UserPlus, UserMinus } from 'lucide-react';
 
 const CalendarPage = () => {
     const [events, setEvents] = useState([]);
@@ -16,7 +17,6 @@ const CalendarPage = () => {
     const [timeMinute, setTimeMinute] = useState("00");
     const [timeSecond, setTimeSecond] = useState("00");
 
-    // ✅ กู้คืนระบบสลับโหมด เดือน/ปี
     const [viewMode, setViewMode] = useState('month'); 
     const [viewFilter, setViewFilter] = useState({ 
         month: new Date().getMonth(), 
@@ -31,12 +31,23 @@ const CalendarPage = () => {
         categoryType: 'normal' 
     });
 
+    const toggleVisibleUser = (targetUserId) => {
+        setFormData(prev => {
+            const isSelected = prev.visibleTo.includes(targetUserId);
+            return {
+                ...prev,
+                visibleTo: isSelected 
+                    ? prev.visibleTo.filter(id => id !== targetUserId) 
+                    : [...prev.visibleTo, targetUserId]
+            };
+        });
+    };
+
     const userId = localStorage.getItem('user_id');
     const API_URL = window.location.hostname === 'localhost'
         ? 'http://localhost:8080'
         : 'https://lover-backend.onrender.com';
 
-    // ✅ ระบบ Generate ปีอัตโนมัติ (ย้อนหลัง 5 ปี, ไปข้างหน้า 10 ปี)
     const yearOptions = useMemo(() => {
         const currentYear = new Date().getFullYear();
         const years = [];
@@ -68,14 +79,39 @@ const CalendarPage = () => {
         } catch (err) { console.error(err); }
     };
 
+    // ✅ นำ ID จริงจาก Supabase มาใส่ตรงนี้ครับ
+const MY_ID = "d8eb372a-d196-44fc-a73b-1809f27e0a56";
+const LOVER_ID = "f384c03a-55bb-4d5f-b3f5-4f2052a9d00e";
+
+const LOVER_RELATION = {
+  [MY_ID]: LOVER_ID,   // ถ้า P ล็อกอิน แฟนคือ R
+  [LOVER_ID]: MY_ID    // ถ้า R ล็อกอิน แฟนคือ P
+};
+
     const fetchUsers = async () => {
         try {
             const res = await axios.get(`${API_URL}/api/users`);
-            setUsers(Array.isArray(res.data) ? res.data.filter(u => u.id !== userId) : []);
+            if (Array.isArray(res.data)) {
+                const otherUsers = res.data.filter(u => u.id !== userId);
+                setUsers(otherUsers);
+
+                // ✅ ระบบ Mapping ID คู่รัก (เปลี่ยน ID ให้ตรงกับใน Supabase นะครับ)
+                const loverMapping = {
+                    "d8eb372a-d196-44fc-a73b-1809f27e0a56": "f384c03a-55bb-4d5f-b3f5-4f2052a9d00e",
+                    "f384c03a-55bb-4d5f-b3f5-4f2052a9d00e": "d8eb372a-d196-44fc-a73b-1809f27e0a56"
+                };
+
+                const myPartnerId = loverMapping[userId];
+                if (myPartnerId) {
+                    setFormData(prev => ({
+                        ...prev,
+                        visibleTo: otherUsers.some(u => u.id === myPartnerId) ? [myPartnerId] : []
+                    }));
+                }
+            }
         } catch (err) { console.error(err); }
     };
 
-    // ✅ กู้คืน Logic การกรองแบบเลือก เดือน+ปี หรือ ปีอย่างเดียว
     const filteredOverview = useMemo(() => {
         return events.filter(ev => {
             const evDate = new Date(ev.event_date);
@@ -85,12 +121,9 @@ const CalendarPage = () => {
             const isMonthly = ev.repeat_type === 'monthly';
             const isDaily = ev.repeat_type === 'daily';
 
-            // ถ้าเลือกโหมดปี: โชว์ทุกอย่างในปีนั้น หรือโชว์พวกตั้งซ้ำที่เข้าเงื่อนไข
             if (viewMode === 'year') {
                 return evYear === viewFilter.year || isYearly || isMonthly || isDaily;
             }
-            
-            // ถ้าเลือกโหมดเดือน: ต้องตรงทั้งเดือนและปี
             const matchYear = evYear === viewFilter.year || isYearly;
             const matchMonth = evMonth === viewFilter.month || isMonthly || isDaily;
             return matchYear && matchMonth;
@@ -100,7 +133,6 @@ const CalendarPage = () => {
     const getDetailedCountdown = (eventDate, repeatType) => {
         const now = currentTime; 
         let target = new Date(eventDate);
-
         if (repeatType === 'yearly') {
             target.setFullYear(now.getFullYear());
             if (target < now) target.setFullYear(now.getFullYear() + 1);
@@ -109,10 +141,8 @@ const CalendarPage = () => {
             target.setMonth(now.getMonth());
             if (target < now) target.setMonth(now.getMonth() + 1);
         }
-
         const diff = target - now;
         if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-
         return {
             days: Math.floor(diff / (1000 * 60 * 60 * 24)),
             hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
@@ -129,7 +159,6 @@ const CalendarPage = () => {
             combinedDate.setMinutes(parseInt(timeMinute));
             combinedDate.setSeconds(parseInt(timeSecond));
             combinedDate.setMilliseconds(0);
-
             const payload = {
                 event_date: combinedDate.toISOString(), 
                 title: formData.title,
@@ -140,17 +169,30 @@ const CalendarPage = () => {
                 is_special: formData.categoryType === 'special', 
                 category_type: formData.categoryType 
             };
-
             await axios.post(`${API_URL}/api/events/create`, payload);
             alert(`🔔 บันทึกนัดหมายสำเร็จ!`);
-            
-            setFormData({ title: '', description: '', visibleTo: [], repeatType: 'none', categoryType: 'normal' });
-            fetchEvents();
-        } catch (err) {
-            console.error(err);
-            alert("เกิดข้อผิดพลาดในการบันทึก");
-        }
-    };
+            // ✅ ของใหม่: ดึงความสัมพันธ์เดิมกลับมาด้วย
+        const loverMapping = {
+            "d8eb372a-d196-44fc-a73b-1809f27e0a56": "f384c03a-55bb-4d5f-b3f5-4f2052a9d00e",
+            "f384c03a-55bb-4d5f-b3f5-4f2052a9d00e": "d8eb372a-d196-44fc-a73b-1809f27e0a56"
+        };
+        const myPartnerId = loverMapping[userId];
+
+        setFormData({ 
+            title: '', 
+            description: '', 
+            // คืนค่า ID แฟนกลับไป ไม่ให้เป็นค่าว่าง
+            visibleTo: myPartnerId ? [myPartnerId] : [], 
+            repeatType: 'none', 
+            categoryType: 'normal' 
+        });
+
+        fetchEvents();
+    } catch (err) {
+        console.error(err);
+        alert("เกิดข้อผิดพลาดในการบันทึก");
+    }
+};
 
     const deleteEvent = async (id, title) => {
         if (!window.confirm(`ต้องการลบกิจกรรม "${title}" ใช่หรือไม่?`)) return;
@@ -178,11 +220,11 @@ const CalendarPage = () => {
     };
 
     const handleActiveDateChange = ({ activeStartDate }) => {
-    setViewFilter({
-        month: activeStartDate.getMonth(),
-        year: activeStartDate.getFullYear()
-    });
-};
+        setViewFilter({
+            month: activeStartDate.getMonth(),
+            year: activeStartDate.getFullYear()
+        });
+    };
 
     if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-rose-50 text-rose-500 font-bold animate-pulse uppercase italic tracking-tighter">Prepare Calendar... ❤️</div>;
 
@@ -193,7 +235,6 @@ const CalendarPage = () => {
                     <Heart fill="currentColor" /> Calendar
                 </h1>
 
-                {/* Form Section */}
                 <div className="bg-white p-6 rounded-3xl shadow-sm border-2 border-rose-100">
                     <h2 className="text-xl font-bold text-slate-700 mb-4 flex items-center gap-2">
                         <Bell className="text-rose-400" /> เพิ่มกิจกรรม
@@ -222,6 +263,7 @@ const CalendarPage = () => {
                             </select>
                         </div>
 
+                        {/* ✅ เพิ่มส่วนประเภทกิจกรรมที่หายไป */}
                         <div className="col-span-1 md:col-span-2 space-y-2">
                             <label className="text-xs font-bold text-slate-400">ประเภทกิจกรรม</label>
                             <div className="flex gap-2">
@@ -250,10 +292,34 @@ const CalendarPage = () => {
                             </div>
                         </div>
 
-                        <button type="submit" className="bg-rose-500 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm col-span-1 md:col-span-2">บันทึก ✨</button>
+                        <div className="col-span-1 md:col-span-2 space-y-2 pt-2 border-t border-rose-50">
+                            <label className="text-xs font-bold text-slate-400 flex items-center gap-1">
+                                <Users size={12}/> ใครมองเห็นกิจกรรมนี้ได้บ้าง? (แฟน)
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                {users.length > 0 ? users.map(user => (
+                                    <button 
+                                        key={user.id} 
+                                        type="button" 
+                                        onClick={() => toggleVisibleUser(user.id)}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold transition-all border-2 ${formData.visibleTo.includes(user.id) 
+                                            ? 'bg-rose-100 border-rose-400 text-rose-600 shadow-sm' 
+                                            : 'bg-slate-50 border-slate-100 text-slate-400 opacity-60'}`}
+                                    >
+                                        {formData.visibleTo.includes(user.id) ? <UserPlus size={14}/> : <UserMinus size={14}/>}
+                                        {user.username}
+                                    </button>
+                                )) : (
+                                    <p className="text-[10px] italic text-slate-300">กำลังโหลดรายชื่อเพื่อน...</p>
+                                )}
+                            </div>
+                        </div>
+
+                        <button type="submit" className="bg-rose-500 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm col-span-1 md:col-span-2 mt-2">บันทึก ✨</button>
                     </form>
                 </div>
 
+                {/* ส่วนอื่นๆ โค้ดคงเดิม... */}
                 {/* ✨ รายการสำคัญ (Countdown) */}
                 <div className="bg-white p-6 rounded-3xl shadow-sm border-2 border-rose-100">
                     <h2 className="text-xl font-bold text-rose-600 mb-4 flex items-center gap-2 italic">
@@ -279,82 +345,49 @@ const CalendarPage = () => {
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="mt-2 text-right">
-                                        <span className="text-[8px] font-bold text-rose-300 uppercase italic">
-                                            {ev.repeat_type !== 'none' ? `แจ้งเตือน: ${ev.repeat_type}` : ''}
-                                        </span>
-                                    </div>
                                 </div>
                             );
                         })}
                     </div>
                 </div>
 
-                {/* ✅ กู้คืนระบบ ภาพรวมปฏิทิน: สลับโหมด เดือน+ปี / ปีอย่างเดียว */}
+                {/* ภาพรวมปฏิทิน */}
                 <div className="bg-white p-6 rounded-3xl shadow-sm border-2 border-rose-100">
                     <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                         <h2 className="text-xl font-bold text-slate-700 flex items-center gap-2">
                             <Filter className="text-rose-400" size={20} /> ภาพรวมปฏิทิน
                         </h2>
                         <div className="flex flex-wrap gap-2 items-center">
-                            {/* ปุ่มสลับโหมด */}
                             <div className="bg-rose-50 p-1 rounded-xl flex gap-1 mr-2 border border-rose-100">
                                 <button onClick={() => setViewMode('month')} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${viewMode === 'month' ? 'bg-white text-rose-500 shadow-sm' : 'text-rose-300'}`}>Month</button>
                                 <button onClick={() => setViewMode('year')} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${viewMode === 'year' ? 'bg-white text-rose-500 shadow-sm' : 'text-rose-300'}`}>Year</button>
                             </div>
-                            
-                            {/* ตัวเลือกเดือน (ปรากฏเฉพาะโหมด Month) */}
                             {viewMode === 'month' && (
-                                <select 
-                                    className="p-2 rounded-xl bg-rose-50 border-none text-xs font-bold text-rose-600 outline-none" 
-                                    value={viewFilter.month} 
-                                    onChange={(e) => setViewFilter({...viewFilter, month: parseInt(e.target.value)})}
-                                >
-                                    {Array.from({length: 12}, (_, i) => (
-                                        <option key={i} value={i}>{new Date(0, i).toLocaleString('en-GB', {month: 'long'})}</option>
-                                    ))}
+                                <select className="p-2 rounded-xl bg-rose-50 border-none text-xs font-bold text-rose-600" value={viewFilter.month} onChange={(e) => setViewFilter({...viewFilter, month: parseInt(e.target.value)})}>
+                                    {Array.from({length: 12}, (_, i) => (<option key={i} value={i}>{new Date(0, i).toLocaleString('en-GB', {month: 'long'})}</option>))}
                                 </select>
                             )}
-                            
-                            {/* ตัวเลือกปี (Dynamic Range: ย้อน 5 หน้า 10) */}
-                            <select 
-                                className="p-2 rounded-xl bg-rose-50 border-none text-xs font-bold text-rose-600 outline-none" 
-                                value={viewFilter.year} 
-                                onChange={(e) => setViewFilter({...viewFilter, year: parseInt(e.target.value)})}
-                            >
+                            <select className="p-2 rounded-xl bg-rose-50 border-none text-xs font-bold text-rose-600" value={viewFilter.year} onChange={(e) => setViewFilter({...viewFilter, year: parseInt(e.target.value)})}>
                                 {yearOptions.map(y => (<option key={y} value={y}>{y}</option>))}
                             </select>
                         </div>
                     </div>
-
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                        {filteredOverview.length > 0 ? (
-                            filteredOverview.sort((a, b) => new Date(a.event_date) - new Date(b.event_date)).map(ev => (
-                                <div key={`ov-${ev.id}`} className={`p-3 rounded-2xl border transition-all ${ev.category_type === 'special' ? 'bg-amber-50 border-amber-200' : 'bg-rose-50 border-rose-100'}`}>
-                                    <div className="flex justify-between items-center">
-                                        <p className="font-black text-slate-700 text-sm truncate">{ev.title}</p>
-                                        {ev.category_type === 'special' && <Star size={12} fill="currentColor" className="text-amber-400"/>}
-                                    </div>
-                                    <p className="text-[10px] text-slate-400 font-bold mt-1">{new Date(ev.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                        {filteredOverview.length > 0 ? filteredOverview.sort((a, b) => new Date(a.event_date) - new Date(b.event_date)).map(ev => (
+                            <div key={`ov-${ev.id}`} className={`p-3 rounded-2xl border transition-all ${ev.category_type === 'special' ? 'bg-amber-50 border-amber-200' : 'bg-rose-50 border-rose-100'}`}>
+                                <div className="flex justify-between items-center">
+                                    <p className="font-black text-slate-700 text-sm truncate">{ev.title}</p>
+                                    {ev.category_type === 'special' && <Star size={12} fill="currentColor" className="text-amber-400"/>}
                                 </div>
-                            ))
-                        ) : (
-                            <p className="text-center col-span-full py-16 text-slate-300 text-xs italic">ไม่มีรายการที่ตรงกับเงื่อนไข ❤️</p>
-                        )}
+                                <p className="text-[10px] text-slate-400 font-bold mt-1">{new Date(ev.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                            </div>
+                        )) : <p className="text-center col-span-full py-16 text-slate-300 text-xs italic">ไม่มีรายการที่ตรงกับเงื่อนไข ❤️</p>}
                     </div>
                 </div>
 
-                {/* Calendar Section */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white p-4 rounded-3xl shadow-sm border-2 border-rose-100 h-fit">
-                        <Calendar 
-    onChange={setDate} 
-    value={date} 
-    tileContent={tileContent} 
-    className="border-none w-full"
-    // ✅ เพิ่มบรรทัดนี้เพื่อให้ Dropdown ด้านบนเปลี่ยนตามการกดลูกศรในปฏิทิน
-    onActiveStartDateChange={handleActiveDateChange}
-/>
+                        <Calendar onChange={setDate} value={date} tileContent={tileContent} className="border-none w-full" onActiveStartDateChange={handleActiveDateChange} />
                     </div>
                     <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
                         <h3 className="font-bold text-slate-500 sticky top-0 bg-rose-50 py-1 text-sm border-b-2 border-rose-100">📅 รายการวันที่ {date.toLocaleDateString('en-GB')}</h3>
