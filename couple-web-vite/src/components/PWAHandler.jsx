@@ -8,19 +8,39 @@ const PWAHandler = ({ isPopup = false }) => {
         return Notification.permission;
     });
     const [showPopup, setShowPopup] = useState(false);
+    // ✅ เพิ่ม State เพื่อเช็คสถานะจากฐานข้อมูล (เชื่อม Home และ Profile)
+    const [isSubscribedInDB, setIsSubscribedInDB] = useState(false);
 
     const userId = localStorage.getItem('user_id');
     const API_URL = window.location.hostname === 'localhost' 
         ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
 
-    useEffect(() => {
-        const dismissed = sessionStorage.getItem('pwa_dismissed');
-        if (isPopup && status !== 'granted' && !dismissed) {
-            // ✅ แก้ไข Error: ใช้ setTimeout เพื่อหลีกเลี่ยง cascading renders
-            const timer = setTimeout(() => setShowPopup(true), 1000);
-            return () => clearTimeout(timer);
+    // ✅ ฟังก์ชันสำหรับเช็คว่าใน DB มี Subscription ของเราอยู่ไหม
+    const checkDBStatus = async () => {
+        if (!userId) return false;
+        try {
+            const res = await axios.get(`${API_URL}/api/check-subscription?user_id=${userId}`);
+            setIsSubscribedInDB(res.data.subscribed);
+            return res.data.subscribed;
+        } catch (err) {
+            console.log("Check DB Error:", err);
+            return false;
         }
-    }, [status, isPopup]);
+    };
+
+    useEffect(() => {
+        const init = async () => {
+            const subscribed = await checkDBStatus(); // เช็คสถานะจริงจาก DB
+            const dismissed = sessionStorage.getItem('pwa_dismissed');
+            
+            // ✅ เงื่อนไขแสดง Pop-up: ต้องยังไม่เปิดใน DB และยังไม่ได้กด "ไว้ทีหลัง" ในเซสชั่นนี้
+            if (isPopup && !subscribed && !dismissed) {
+                const timer = setTimeout(() => setShowPopup(true), 1500);
+                return () => clearTimeout(timer);
+            }
+        };
+        init();
+    }, [isPopup, userId, status]); // เพิ่ม status เข้าไปเพื่อให้ re-check เมื่อมีการเปลี่ยนแปลง
 
     const handleSubscribe = async () => {
         try {
@@ -39,8 +59,11 @@ const PWAHandler = ({ isPopup = false }) => {
                     user_id: userId,
                     subscription: subscription
                 });
+                
+                // ✅ เมื่อบันทึกสำเร็จ ให้ซิงค์สถานะและปิด Pop-up ทันที
+                setIsSubscribedInDB(true);
+                setShowPopup(false); 
                 alert('เปิดการแจ้งเตือนสำเร็จ! ❤️');
-                setShowPopup(false);
             }
         } catch (err) { 
           console.log("Error during subscription:", err);
@@ -51,8 +74,9 @@ const PWAHandler = ({ isPopup = false }) => {
     const handleUnsubscribe = async () => {
         if (window.confirm("คุณต้องการปิดการแจ้งเตือนบนเครื่องนี้ใช่หรือไม่?")) {
             try {
-                // ✅ ส่งคำขอไปลบใน Backend ตามที่นายต้องการ
                 await axios.post(`${API_URL}/api/unsubscribe`, { user_id: userId });
+                // ✅ เมื่อยกเลิกสำเร็จ ให้ซิงค์สถานะกลับมาเป็นปิด
+                setIsSubscribedInDB(false);
                 setStatus('default');
                 alert('ปิดการแจ้งเตือนเรียบร้อยแล้ว ✨');
             } catch (err) { 
@@ -68,7 +92,8 @@ const PWAHandler = ({ isPopup = false }) => {
     };
 
     if (isPopup) {
-        if (!showPopup) return null;
+        // ✅ ถ้าเปิดอยู่แล้วใน DB (isSubscribedInDB) หรือไม่ต้องโชว์ (showPopup เป็น false) ให้ return null
+        if (!showPopup || isSubscribedInDB) return null;
         return (
             <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] w-[90%] max-w-sm bg-white rounded-3xl shadow-2xl border-2 border-rose-100 p-5 animate-bounce-in">
                 <div className="flex justify-between items-start mb-3">
@@ -81,9 +106,7 @@ const PWAHandler = ({ isPopup = false }) => {
                     เปิดแจ้งเตือนเพื่อให้แอปแจ้งเวลาแฟนส่งคำขอหรือมีวันสำคัญนะครับ ✨
                 </p>
                 <div className="flex gap-2">
-                    {/* ✅ ปุ่ม "ไว้ทีหลัง" */}
                     <button onClick={dismissPopup} className="flex-1 py-3 text-[10px] font-black text-slate-400 bg-slate-50 rounded-2xl transition-all active:scale-95">ไว้ทีหลัง</button>
-                    {/* ✅ ปุ่ม "เปิดการใช้งาน" */}
                     <button onClick={handleSubscribe} className="flex-2 py-3 px-6 bg-rose-500 text-white text-[10px] font-black rounded-2xl shadow-lg shadow-rose-100 transition-all active:scale-95">เปิดการใช้งาน</button>
                 </div>
             </div>
@@ -92,15 +115,16 @@ const PWAHandler = ({ isPopup = false }) => {
 
     return (
         <div className="space-y-3">
-            <div className={`p-5 rounded-[2.5rem] border-2 transition-all ${status === 'granted' ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
+            {/* ✅ ปรับ UI ให้ใช้สถานะจาก isSubscribedInDB เพื่อความแม่นยำและการเชื่อมโยงกัน */}
+            <div className={`p-5 rounded-[2.5rem] border-2 transition-all ${isSubscribedInDB ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
                 <div className="flex items-center justify-between gap-4">
                     <div className="space-y-1">
                         <p className="font-black text-slate-700 text-xs uppercase italic">การตั้งค่าแจ้งเตือน</p>
                         <p className="text-[10px] font-bold uppercase text-slate-400">
-                            สถานะ: {status === 'granted' ? '● เปิดแจ้งเตือนแล้ว' : '○ ปิดอยู่'}
+                            สถานะ: {isSubscribedInDB ? '● เปิดแจ้งเตือนแล้ว' : '○ ปิดอยู่'}
                         </p>
                     </div>
-                    {status === 'granted' ? (
+                    {isSubscribedInDB ? (
                         <button onClick={handleUnsubscribe} title="ปิดการแจ้งเตือน" className="p-3 bg-white text-rose-500 rounded-2xl shadow-sm border border-rose-100 hover:bg-rose-50 transition-all active:scale-90">
                             <BellOff size={18} />
                         </button>
