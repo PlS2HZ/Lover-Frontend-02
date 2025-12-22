@@ -25,23 +25,26 @@ const MindGame = () => { // ✅ รับ props user เข้ามาใช้
     ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
 
   // ✅ ดึงข้อมูลคำเชิญที่ค้างอยู่ (Pending Invitations)
-  useEffect(() => {
+  // ใน MindGame.jsx
+useEffect(() => {
     const fetchInvites = async () => {
-        if (!userId) return;
+        const currentUserId = localStorage.getItem('user_id'); // ✅ ดึงใหม่ทุกครั้งเพื่อความชัวร์
+        if (!currentUserId) return;
+
         try {
-            const res = await fetch(`${API_URL}/api/game/invitations?user_id=${userId}`);
+            const res = await fetch(`${API_URL}/api/game/invitations?user_id=${currentUserId}`);
             const data = await res.json();
+            console.log("📨 รายการคำเชิญที่ได้รับ:", data); // ✅ เพิ่ม Log ไว้เช็คใน Console
             setInvites(data || []);
         } catch (err) {
-            console.error("Fetch invites error:", err);
+            console.error("❌ Fetch invites error:", err);
         }
     };
+
     fetchInvites();
-    
-    // ตั้งเวลาดึงข้อมูลทุก 10 วินาที หรือจะใช้ Real-time ก็ได้ครับ
-    const interval = setInterval(fetchInvites, 10000);
+    const interval = setInterval(fetchInvites, 5000); // ✅ เช็คทุก 5 วินาทีให้ไวขึ้น
     return () => clearInterval(interval);
-  }, [userId, API_URL]);
+}, [API_URL]);
 
   useEffect(() => {
     fetchLevels();

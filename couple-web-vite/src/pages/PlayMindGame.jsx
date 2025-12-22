@@ -33,43 +33,47 @@ const PlayMindGame = ({ user }) => {
     }, [id]);
 
     // ใน PlayMindGame.jsx ส่วน handleSelectMode
-const handleSelectMode = async (mode) => {
+const handleSelectMode = async (selectedMode) => {
+    // selectedMode จะเป็น 'bot' หรือ 'human' ตามที่นายกดเลือกบนหน้าจอ
+    const useBotValue = selectedMode === 'bot'; 
     setLoading(true);
+
     try {
-        if (mode === 'bot') {
-            // ✅ สร้าง Session ใหม่สำหรับบอทผ่าน Backend
-            const res = await fetch(`${API_URL}/api/game/create`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    game_id: id,
-                    guesser_id: user.id,
-                    use_bot: true
-                })
-            });
-            const session = await res.json();
-            if (res.ok) {
-                // ย้ายไปหน้าแชทโดยใช้ Session ID
+        // ✅ สร้าง Session การเล่นใหม่ทุกครั้งที่เลือกโหมด เพื่อรองรับการสลับโหมดไปมา
+        const res = await fetch(`${API_URL}/api/game/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                game_id: id, // ID ของด่าน
+                guesser_id: user.id, // ID ของผู้เล่น (แฟน)
+                use_bot: useBotValue // ✅ ส่งค่าโหมดที่เลือกใหม่ไปสร้าง Session
+            })
+        });
+        
+        const session = await res.json();
+        
+        if (res.ok) {
+            if (selectedMode === 'bot') {
+                // ถ้าเป็นบอท เข้าไปเริ่มเล่นได้ทันที
                 navigate(`/game-session/${session.id}?mode=bot`);
-            }
-        } else {
-            // ✅ โหมดคน: ใช้ระบบส่งคำเชิญเดิม
-            const res = await fetch(`${API_URL}/api/game/invite`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    game_id: id,
-                    guesser_id: user.id,
-                    host_id: level.host_id
-                })
-            });
-            if (res.ok) {
-                alert(`🚀 ส่งคำเชิญไปแล้ว! รอแฟนรับคำท้าที่หน้า Lobby นะครับ`);
+            } else {
+                // ถ้าเป็นคน ส่งคำเชิญให้เจ้าของด่าน
+                await fetch(`${API_URL}/api/game/invite`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        game_id: id,
+                        guesser_id: user.id,
+                        host_id: level.host_id
+                    })
+                });
+                alert(`🚀 ส่งคำเชิญไปให้ ${level.host?.username} แล้ว! รอแฟนรับคำท้าที่ Lobby นะครับ`);
                 navigate('/mind-game');
             }
         }
     } catch (err) {
         console.error("Mode selection error:", err);
+        alert("เกิดข้อผิดพลาดในการเลือกโหมด");
     } finally {
         setLoading(false);
     }
