@@ -39,7 +39,7 @@ const generateMosaicPieces = () => {
   const rows = isMobile ? 8 : (isTablet ? 9 : 10); 
   const cols = isMobile ? 6 : (isTablet ? 8 : 10); 
   
-  const mosaicPhoto = isMobile ? "/mb8.jpg" : "/com2.jpg";
+  const mosaicPhoto = isMobile ? "/mb4.jpg" : "/com2.jpg";
 
   const pieces = [];
   for (let r = 0; r < rows; r++) {
