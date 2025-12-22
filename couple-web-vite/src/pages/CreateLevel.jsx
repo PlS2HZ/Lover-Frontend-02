@@ -25,7 +25,7 @@ const CreateLevel = () => { // ❌ เอา { user } ออก เพราะ�
                     host_id: userId, // ✅ ใช้ userId ที่ดึงมา
                     secret_word: secretWord,
                     is_template: true,
-                    use_bot: true
+                    //use_bot: true
                 }]);
             
             if (error) throw error;

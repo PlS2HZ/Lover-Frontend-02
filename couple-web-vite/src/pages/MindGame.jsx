@@ -9,14 +9,39 @@ import {
   Trophy, 
   Clock, 
   User,
-  ChevronRight
+  ChevronRight,
+  Heart // ✅ เพิ่ม Heart เข้ามาสำหรับแสดงในกล่องคำเชิญ
 } from 'lucide-react';
 
-const MindGame = () => {
+const MindGame = () => { // ✅ รับ props user เข้ามาใช้งาน
   const [levels, setLevels] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [invites, setInvites] = useState([]); // ✅ เพิ่ม State สำหรับเก็บคำเชิญ
   const navigate = useNavigate();
   const userId = localStorage.getItem('user_id');
+
+  // ✅ กำหนด API_URL ให้ถูกต้อง
+  const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
+
+  // ✅ ดึงข้อมูลคำเชิญที่ค้างอยู่ (Pending Invitations)
+  useEffect(() => {
+    const fetchInvites = async () => {
+        if (!userId) return;
+        try {
+            const res = await fetch(`${API_URL}/api/game/invitations?user_id=${userId}`);
+            const data = await res.json();
+            setInvites(data || []);
+        } catch (err) {
+            console.error("Fetch invites error:", err);
+        }
+    };
+    fetchInvites();
+    
+    // ตั้งเวลาดึงข้อมูลทุก 10 วินาที หรือจะใช้ Real-time ก็ได้ครับ
+    const interval = setInterval(fetchInvites, 10000);
+    return () => clearInterval(interval);
+  }, [userId, API_URL]);
 
   useEffect(() => {
     fetchLevels();
@@ -32,7 +57,6 @@ const MindGame = () => {
   const fetchLevels = async () => {
     setLoading(true);
     try {
-      // ดึงโจทย์ย้อนหลัง 30 วัน พร้อมชื่อคนตั้ง
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -70,7 +94,7 @@ const MindGame = () => {
           </div>
           
           <button 
-            onClick={() => navigate('/create-level')} // หน้าสำหรับตั้งโจทย์ใหม่
+            onClick={() => navigate('/create-level')}
             className="group flex items-center gap-2 bg-slate-900 text-white px-4 py-2.5 rounded-2xl font-bold text-xs uppercase italic transition-all hover:bg-rose-500 active:scale-95 shadow-lg shadow-slate-200"
           >
             <PlusCircle size={18} />
@@ -80,6 +104,35 @@ const MindGame = () => {
       </div>
 
       <div className="max-w-2xl mx-auto p-4 space-y-4 mt-4">
+        
+        {/* ✅ กล่องแจ้งเตือนคำเชิญ (Invitation Box) - ย้ายมาไว้นอกลูป map */}
+        {invites.length > 0 && (
+          <div className="mb-8 space-y-3">
+            <h3 className="text-rose-500 font-black italic text-xs uppercase tracking-widest px-2">⚠️ มีคนท้าทายคุณ!</h3>
+            {invites.map(inv => (
+              <div key={inv.id} className="bg-white border-2 border-rose-100 p-5 rounded-[2.5rem] shadow-xl flex items-center justify-between animate-bounce">
+                <div className="flex items-center gap-3">
+                  <div className="bg-rose-500 text-white p-3 rounded-2xl">
+                    <Heart size={20} fill="currentColor" />
+                  </div>
+                  <div>
+                    <p className="font-black italic text-slate-800 uppercase text-sm">
+                      {inv.host?.username} ท้าคุณ!
+                    </p>
+                    <p className="text-[10px] font-bold text-slate-400 italic">เขากำลังรอให้คุณตอบ ใช่/ไม่ใช่</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => navigate(`/game-session/${inv.sessions?.id}?mode=human`)}
+                  className="bg-slate-900 text-white px-6 py-2 rounded-full font-black text-[10px] uppercase italic hover:bg-rose-500 transition-colors shadow-lg shadow-rose-100"
+                >
+                  รับคำท้า
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {loading ? (
           <div className="text-center py-20">
             <div className="animate-spin w-10 h-10 border-4 border-rose-500 border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -144,10 +197,8 @@ const MindGame = () => {
                   )}
                 </div>
 
-                {/* ตกแต่งเล็กน้อยด้านล่าง */}
                 <div className="mt-4 pt-3 border-t border-slate-50 flex justify-between items-center">
                    <div className="flex -space-x-2">
-                      {/* อนาคตใส่รูปคนที่เคยเล่นผ่านแล้ว */}
                       <div className="w-6 h-6 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[8px] font-black text-slate-400">?</div>
                    </div>
                    <span className="text-[9px] font-black text-slate-300 uppercase italic">คลิกเพื่อดูรายละเอียด</span>

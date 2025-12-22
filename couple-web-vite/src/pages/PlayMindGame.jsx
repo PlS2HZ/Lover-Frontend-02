@@ -37,26 +37,39 @@ const handleSelectMode = async (mode) => {
     setLoading(true);
     try {
         if (mode === 'bot') {
-            navigate(`/game-session/${id}?mode=bot`);
+            // ✅ สร้าง Session ใหม่สำหรับบอทผ่าน Backend
+            const res = await fetch(`${API_URL}/api/game/create`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    game_id: id,
+                    guesser_id: user.id,
+                    use_bot: true
+                })
+            });
+            const session = await res.json();
+            if (res.ok) {
+                // ย้ายไปหน้าแชทโดยใช้ Session ID
+                navigate(`/game-session/${session.id}?mode=bot`);
+            }
         } else {
+            // ✅ โหมดคน: ใช้ระบบส่งคำเชิญเดิม
             const res = await fetch(`${API_URL}/api/game/invite`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     game_id: id,
-                    guesser_id: user.id, // เราเป็นคนเล่น
-                    host_id: level.host_id // แฟนเป็นคนตอบ
+                    guesser_id: user.id,
+                    host_id: level.host_id
                 })
             });
             if (res.ok) {
-                // ✅ แจ้งเตือนยืนยันให้ชัดเจน
-                alert(`🚀 ส่งคำเชิญไปให้ ${level.host?.username} แล้ว! กรุณารอแฟนกดตอบรับที่ Navbar นะครับ`);
+                alert(`🚀 ส่งคำเชิญไปแล้ว! รอแฟนรับคำท้าที่หน้า Lobby นะครับ`);
                 navigate('/mind-game');
             }
         }
     } catch (err) {
-        console.error("Invite Error:", err);
-        alert("เกิดข้อผิดพลาดในการส่งคำเชิญ");
+        console.error("Mode selection error:", err);
     } finally {
         setLoading(false);
     }
