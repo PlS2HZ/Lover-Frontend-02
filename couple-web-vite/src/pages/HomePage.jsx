@@ -159,9 +159,9 @@ const HomePage = () => {
 
       {/* ✅ จุดที่ 2: วาง Component ไว้ด้านบนสุดหรือจุดที่เหมาะสม */}
       {/* ผมแนะนำให้วางไว้บนสุดของเนื้อหา เพื่อให้แฟนกดได้ง่ายครับ */}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-full max-w-xs">
+      {/* <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-full max-w-xs">
           <PWAHandler />
-      </div>
+      </div> */}
 
       <AnimatePresence>
         {isExploding && mosaicPieces.map((p) => (
