@@ -29,12 +29,11 @@ const CountdownUnit = ({ value, unit }) => (
   </div>
 );
 
+// ✅ 3. ปรับปรุงฟังก์ชัน generateMosaicPieces (แก้รอยต่อพิกเซล)
 const generateMosaicPieces = () => {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const rows = isMobile ? 5 : 10; 
-  const cols = isMobile ? 5 : 10; 
-  
-  // ✅ เลือกรูป Mosaic ตามประเภทอุปกรณ์ (คอมใช้ com2, มือถือใช้ mb8)
+  const rows = isMobile ? 8 : 10; // ปรับจำนวนแถวให้ละเอียดขึ้นสำหรับมือถือ
+  const cols = isMobile ? 6 : 10; 
   const mosaicPhoto = isMobile ? "/mb8.jpg" : "/com2.jpg";
 
   const pieces = [];
@@ -43,10 +42,19 @@ const generateMosaicPieces = () => {
       const targetX = (c * (100 / cols));
       const targetY = (r * (100 / rows));
       pieces.push({
-        id: `piece-${r}-${c}`, targetX, targetY, width: (100 / cols) + 0.1, height: (100 / rows) + 0.1,
-        bgPosX: c === 0 ? 0 : (c * 100) / (cols - 1), bgPosY: r === 0 ? 0 : (r * 100) / (rows - 1),
-        midX: targetX + (Math.cos(r + c) * 25), midY: targetY + (Math.sin(r + c) * 25),
-        delay: (r * 0.05) + (c * 0.03), bgSizeX: cols * 100.1, bgSizeY: rows * 100.1,
+        id: `piece-${r}-${c}`, 
+        targetX, 
+        targetY, 
+        // ✅ ใช้ calc และ +0.2 เพื่อให้ขอบเกยกันเล็กน้อย ป้องกันเส้นขาว
+        width: `calc(${100 / cols}% + 0.2px)`, 
+        height: `calc(${100 / rows}% + 0.2px)`,
+        bgPosX: c === 0 ? 0 : (c * 100) / (cols - 1), 
+        bgPosY: r === 0 ? 0 : (r * 100) / (rows - 1),
+        midX: targetX + (Math.cos(r + c) * 30), 
+        midY: targetY + (Math.sin(r + c) * 30),
+        delay: (r * 0.04) + (c * 0.02), 
+        bgSizeX: cols * 100, 
+        bgSizeY: rows * 100,
         photo: mosaicPhoto 
       });
     }
@@ -86,9 +94,19 @@ const HomePage = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const nextImage = () => setCurrentImgIndex((prev) => (prev + 1) % PHOTO_DATA.length);
-  const prevImage = () => setCurrentImgIndex((prev) => (prev - 1 + PHOTO_DATA.length) % PHOTO_DATA.length);
+// ✅ 1. เพิ่ม State สำหรับจัดการทิศทางการเลื่อน (ใส่ไว้ใน HomePage Component)
+const [direction, setDirection] = useState(0); // 1 คือไปข้างหน้า, -1 คือย้อนกลับ
 
+// ✅ 2. ปรับปรุงฟังก์ชันเลื่อนภาพ
+const nextImage = () => {
+  setDirection(1);
+  setCurrentImgIndex((prev) => (prev + 1) % PHOTO_DATA.length);
+};
+
+const prevImage = () => {
+  setDirection(-1);
+  setCurrentImgIndex((prev) => (prev - 1 + PHOTO_DATA.length) % PHOTO_DATA.length);
+};
   const getDetailedCountdown = (eventDate, repeatType) => {
     const now = currentTime; let target = new Date(eventDate);
     if (repeatType === 'yearly') {
@@ -164,23 +182,33 @@ const HomePage = () => {
       </div> */}
 
       <AnimatePresence>
-        {isExploding && mosaicPieces.map((p) => (
-          <motion.div
-            key={p.id} initial={{ opacity: 1, scale: 0, left: "90%", top: "80%" }}
-            animate={{ 
-              opacity: [1, 1, 1, 0], scale: [0, 1.1, 1, 1, 0], 
-              left: ["90%", `${p.midX}%`, `${p.targetX}%`, `${p.targetX}%`, `${p.targetX}%`], 
-              top: ["80%", `${p.midY}%`, `${p.targetY}%`, `${p.targetY}%`, `${p.targetY}%`],
-            }}
-            transition={{ duration: 40, ease: "circOut", times: [0, 0.03, 0.08, 0.95, 1], delay: p.delay }}
-            style={{ 
-              width: `${p.width}vw`, height: `${p.height}vh`, position: 'fixed', zIndex: 9999, pointerEvents: 'none',
-              backgroundImage: `url("${p.photo}")`, 
-              backgroundSize: `${p.bgSizeX}% ${p.bgSizeY}%`, 
-              backgroundPosition: `${p.bgPosX}% ${p.bgPosY}%`, backgroundRepeat: 'no-repeat', border: 'none', outline: 'none',
-            }}
-          />
-        ))}
+        // ✅ 5. ปรับปรุงส่วน Explosion (Mosaic Animation)
+{isExploding && (
+  <div className="fixed inset-0 z-[9999] pointer-events-none"> {/* Container คลุมจอ */}
+    {mosaicPieces.map((p) => (
+      <motion.div
+        key={p.id} 
+        initial={{ opacity: 1, scale: 0, left: "90%", top: "80%" }}
+        animate={{ 
+          opacity: [1, 1, 1, 0], 
+          scale: [0, 1, 1, 1, 0], 
+          left: ["90%", `${p.midX}%`, `${p.targetX}%`, `${p.targetX}%`, `${p.targetX}%`], 
+          top: ["80%", `${p.midY}%`, `${p.targetY}%`, `${p.targetY}%`, `${p.targetY}%`],
+        }}
+        transition={{ duration: 5, ease: "circOut", times: [0, 0.1, 0.2, 0.9, 1], delay: p.delay }}
+        style={{ 
+          width: p.width, 
+          height: p.height, 
+          position: 'absolute', // เปลี่ยนจาก fixed เป็น absolute ภายใน container
+          backgroundImage: `url("${p.photo}")`, 
+          backgroundSize: `${p.bgSizeX}% ${p.bgSizeY}%`, 
+          backgroundPosition: `${p.bgPosX}% ${p.bgPosY}%`, 
+          backgroundRepeat: 'no-repeat',
+        }}
+      />
+    ))}
+  </div>
+)}
       </AnimatePresence>
 
       <div className="max-w-7xl w-full mx-auto flex flex-col lg:flex-row gap-6 md:gap-12 items-center justify-center z-10">
@@ -199,31 +227,35 @@ const HomePage = () => {
           <div className="bg-white p-6 md:p-8 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl border border-rose-100 w-full text-center relative overflow-hidden">
             <div className="text-4xl md:text-5xl mb-2 animate-bounce select-none">💖</div>
             <h1 className="text-2xl md:text-4xl font-black text-slate-800 mb-6 uppercase tracking-tighter italic">Our Space</h1>
-            
-            <div className="relative group mb-4 rounded-[2rem] overflow-hidden aspect-square md:aspect-video bg-slate-50 flex items-center justify-center border-4 border-rose-50 shadow-inner">
-              <AnimatePresence mode='wait'>
-                <motion.img 
-                  key={currentImgIndex}
-                  // ✅ เลือกรูปตามอุปกรณ์ (PC ใช้ฟิลด์ pc, มือถือใช้ฟิลด์ mobile)
-                  src={isMobileView ? PHOTO_DATA[currentImgIndex].mobile : PHOTO_DATA[currentImgIndex].pc}
-                  initial={{ opacity: 0, x: 100 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -100 }}
-                  transition={{ duration: 0.4 }}
-                  drag="x" dragConstraints={{ left: 0, right: 0 }}
-                  onDragEnd={(e, { offset }) => {
-                    if (offset.x > 50) prevImage();
-                    else if (offset.x < -50) nextImage();
-                  }}
-                  className="w-full h-full object-cover cursor-grab active:cursor-grabbing"
-                />
-              </AnimatePresence>
-              <button onClick={prevImage} className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/30 backdrop-blur-md p-2 rounded-full text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"><ChevronLeft size={24} /></button>
-              <button onClick={nextImage} className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/30 backdrop-blur-md p-2 rounded-full text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"><ChevronRight size={24} /></button>
-              <div className="absolute bottom-4 flex gap-1.5">
-                {PHOTO_DATA.map((_, i) => (
-                  <div key={i} className={`h-1.5 rounded-full transition-all ${i === currentImgIndex ? "w-4 bg-rose-500" : "w-1.5 bg-rose-200"}`} />
-                ))}
-              </div>
-            </div>
+<div className="relative group mb-4 rounded-[2rem] overflow-hidden aspect-square md:aspect-video bg-slate-50 flex items-center justify-center border-4 border-rose-50 shadow-inner">
+  <AnimatePresence mode='popLayout' custom={direction}>
+    <motion.img 
+      key={currentImgIndex}
+      custom={direction}
+      src={isMobileView ? PHOTO_DATA[currentImgIndex].mobile : PHOTO_DATA[currentImgIndex].pc}
+      // ✅ เลื่อนตามทิศทางที่กด
+      initial={(d) => ({ opacity: 0, x: d > 0 ? 200 : -200 })} 
+      animate={{ opacity: 1, x: 0 }} 
+      exit={(d) => ({ opacity: 0, x: d > 0 ? -200 : 200 })}
+      transition={{ duration: 0.4, ease: "easeInOut" }}
+      drag="x" 
+      dragConstraints={{ left: 0, right: 0 }}
+      onDragEnd={(e, { offset }) => {
+        if (offset.x > 50) prevImage();
+        else if (offset.x < -50) nextImage();
+      }}
+      className="absolute w-full h-full object-cover cursor-grab active:cursor-grabbing"
+    />
+  </AnimatePresence>
+  
+  {/* ปุ่มเลื่อนซ้าย-ขวา */}
+  <button onClick={prevImage} className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white/30 backdrop-blur-md p-2 rounded-full text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+    <ChevronLeft size={24} />
+  </button>
+  <button onClick={nextImage} className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-white/30 backdrop-blur-md p-2 rounded-full text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+    <ChevronRight size={24} />
+  </button>
+</div>
             <motion.p key={`caption-${currentImgIndex}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-rose-400 font-bold text-sm md:text-base mb-6 italic">{PHOTO_DATA[currentImgIndex].caption}</motion.p>
             <div className="flex flex-col gap-3">
               <button onClick={() => navigate('/create')} className="bg-rose-500 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-rose-600 transition-all active:scale-95 flex items-center justify-center gap-2 text-base md:text-lg">ขออนุญาต ✨ <Rocket size={20}/></button>
