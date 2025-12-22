@@ -30,10 +30,15 @@ const CountdownUnit = ({ value, unit }) => (
 );
 
 // ✅ 3. ปรับปรุงฟังก์ชัน generateMosaicPieces (แก้รอยต่อพิกเซล)
+// ปรับปรุงฟังก์ชันเช็คประเภทอุปกรณ์และขนาดชิ้นพิกเซล
 const generateMosaicPieces = () => {
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const rows = isMobile ? 8 : 10; // ปรับจำนวนแถวให้ละเอียดขึ้นสำหรับมือถือ
-  const cols = isMobile ? 6 : 10; 
+  const width = typeof window !== 'undefined' ? window.innerWidth : 1024;
+  const isMobile = width < 768;
+  const isTablet = width >= 768 && width < 1024;
+
+  const rows = isMobile ? 8 : (isTablet ? 9 : 10); 
+  const cols = isMobile ? 6 : (isTablet ? 8 : 10); 
+  
   const mosaicPhoto = isMobile ? "/mb8.jpg" : "/com2.jpg";
 
   const pieces = [];
@@ -43,15 +48,13 @@ const generateMosaicPieces = () => {
       const targetY = (r * (100 / rows));
       pieces.push({
         id: `piece-${r}-${c}`, 
-        targetX, 
-        targetY, 
-        // ✅ ใช้ calc และ +0.2 เพื่อให้ขอบเกยกันเล็กน้อย ป้องกันเส้นขาว
-        width: `calc(${100 / cols}% + 0.2px)`, 
-        height: `calc(${100 / rows}% + 0.2px)`,
+        targetX, targetY,
+        width: `${100 / cols}%`, // ✅ ใช้ % เพื่อให้พอดีหน้าจอทุกขนาด
+        height: `${100 / rows}%`,
         bgPosX: c === 0 ? 0 : (c * 100) / (cols - 1), 
         bgPosY: r === 0 ? 0 : (r * 100) / (rows - 1),
-        midX: targetX + (Math.cos(r + c) * 30), 
-        midY: targetY + (Math.sin(r + c) * 30),
+        midX: targetX + (Math.cos(r + c) * 20), 
+        midY: targetY + (Math.sin(r + c) * 20),
         delay: (r * 0.04) + (c * 0.02), 
         bgSizeX: cols * 100, 
         bgSizeY: rows * 100,
