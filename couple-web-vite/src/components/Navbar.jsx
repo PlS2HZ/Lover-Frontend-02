@@ -1,13 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react'; // ✅ เพิ่ม useEffect
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Calendar, Send, History, LogOut, LogIn, ChevronLeft, ChevronRight } from 'lucide-react'; // ✨ เพิ่มลูกศร
-import { useTheme } from '../ThemeConstants'; // ✨ Import useTheme มาใช้
+import { Home, Calendar, Send, History, LogOut, LogIn, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTheme } from '../ThemeConstants';
 
 const Navbar = () => {
   const location = useLocation();
-  const { currentTheme, nextTheme, prevTheme } = useTheme(); // ✨ ดึงฟังก์ชันคุมธีมมาใช้
-  const username = localStorage.getItem('username');
-  const avatarUrl = localStorage.getItem('avatar_url');
+  const { currentTheme, nextTheme, prevTheme } = useTheme();
+  
+  // ✅ ใช้ State จัดการเพื่อรองรับการเปลี่ยนรูปทันทีโดยไม่ต้อง Refresh หน้าจอ
+  const [userData, setUserData] = useState({
+    username: localStorage.getItem('username'),
+    avatarUrl: localStorage.getItem('avatar_url')
+  });
+
+  // ✅ ดักจับการเปลี่ยนแปลงของข้อมูล (เผื่อนายอัปเดตโปรไฟล์จากหน้าอื่น)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setUserData({
+        username: localStorage.getItem('username'),
+        avatarUrl: localStorage.getItem('avatar_url')
+      });
+    };
+
+    // เช็คข้อมูลทุกครั้งที่เปลี่ยนหน้า (Location Change)
+    handleStorageChange();
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [location]);
 
   const handleLogout = () => {
     if (window.confirm("คุณต้องการออกจากระบบใช่หรือไม่? ❤️")) {
@@ -23,7 +43,6 @@ const Navbar = () => {
     { name: 'History', path: '/history', icon: <History size={18} /> },
   ];
 
-  // แมปสีตามธีมเพื่อใช้ใน Navbar
   const themeColors = {
     home: 'border-rose-100 text-rose-600 bg-rose-50',
     newyear: 'border-yellow-200 text-yellow-600 bg-yellow-50',
@@ -42,17 +61,12 @@ const Navbar = () => {
 
   return (
     <>
-      {/* ✅ Navbar ที่เปลี่ยนสีตามธีม */}
       <nav className={`bg-white sticky top-0 z-[100] border-b ${activeColor.split(' ')[0]} px-4 py-2 transition-colors duration-1000`}>
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           
           <Link to="/" className="flex items-center gap-2 group">
             <div className="w-9 h-9 rounded-xl shadow-md overflow-hidden group-hover:rotate-12 transition-transform">
-              <img 
-                src="/com2.jpg" 
-                alt="Couple Icon" 
-                className="w-full h-full object-cover"
-              />
+              <img src="/com2.jpg" alt="Couple Icon" className="w-full h-full object-cover" />
             </div>
             <span className={`text-xl font-black italic tracking-tighter uppercase transition-colors duration-1000 ${activeColor.split(' ')[1]}`}>
               LOVER
@@ -60,7 +74,7 @@ const Navbar = () => {
           </Link>
 
           <div className="flex items-center gap-1 sm:gap-2">
-            {username && navItems.map((item) => (
+            {userData.username && navItems.map((item) => (
               <Link 
                 key={item.name} 
                 to={item.path} 
@@ -70,15 +84,19 @@ const Navbar = () => {
               </Link>
             ))}
 
-            {username ? (
+            {userData.username ? (
               <div className="flex items-center gap-2 ml-2 pl-2 border-l border-slate-100">
                 <Link to="/profile" className="flex items-center gap-2 group">
+                  {/* ✅ แก้ไขจุดนี้: เช็ค URL รูปภาพให้ละเอียดขึ้น */}
                   <img 
-                    src={avatarUrl && avatarUrl !== 'null' ? avatarUrl : `https://ui-avatars.com/api/?name=${username}&background=random`} 
-                    className="w-9 h-9 rounded-full border-2 border-white shadow-sm object-cover group-hover:border-rose-300 transition-all"
+                    src={userData.avatarUrl && userData.avatarUrl !== 'null' && userData.avatarUrl !== '' 
+                      ? userData.avatarUrl 
+                      : `https://ui-avatars.com/api/?name=${userData.username}&background=random`} 
+                    className="w-9 h-9 rounded-full border-2 border-white shadow-sm object-cover group-hover:border-rose-300 transition-all bg-slate-50"
                     alt="Avatar"
+                    key={userData.avatarUrl} // บังคับ Re-render เมื่อ URL เปลี่ยน
                   />
-                  <span className="text-xs font-black text-slate-700 uppercase hidden md:block">{username}</span>
+                  <span className="text-xs font-black text-slate-700 uppercase hidden md:block">{userData.username}</span>
                 </Link>
                 <button onClick={handleLogout} className="text-rose-500 p-2 rounded-xl hover:bg-rose-50 transition-all">
                   <LogOut size={18} />
@@ -95,28 +113,19 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* ✅ ✨ ปุ่มลูกศรเปลี่ยน Season (มุมซ้าย-ขวา ล่างของจอ) */}
+      {/* ปุ่มเปลี่ยน Season ยังคงเดิม */}
       <div className="fixed bottom-6 left-6 z-[999] flex flex-col items-center gap-2">
-        <button 
-          onClick={prevTheme}
-          className="bg-white/80 backdrop-blur-md p-4 rounded-full shadow-lg border border-rose-100 text-rose-500 hover:scale-110 active:scale-90 transition-all"
-          title="ฤดูกาลก่อนหน้า"
-        >
+        <button onClick={prevTheme} className="bg-white/80 backdrop-blur-md p-4 rounded-full shadow-lg border border-rose-100 text-rose-500 hover:scale-110 active:scale-90 transition-all">
           <ChevronLeft size={24} />
         </button>
       </div>
 
       <div className="fixed bottom-6 right-6 z-[999] flex flex-col items-center gap-2">
-        <button 
-          onClick={nextTheme}
-          className="bg-white/80 backdrop-blur-md p-4 rounded-full shadow-lg border border-rose-100 text-rose-500 hover:scale-110 active:scale-90 transition-all"
-          title="ฤดูกาลถัดไป"
-        >
+        <button onClick={nextTheme} className="bg-white/80 backdrop-blur-md p-4 rounded-full shadow-lg border border-rose-100 text-rose-500 hover:scale-110 active:scale-90 transition-all">
           <ChevronRight size={24} />
         </button>
       </div>
       
-      {/* แสดงชื่อธีมปัจจุบันแบบลอยๆ (ลบออกได้ถ้าไม่ชอบ) */}
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[998] pointer-events-none">
           <span className="bg-white/40 backdrop-blur-sm px-4 py-1 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
             Season: {currentTheme.name}
