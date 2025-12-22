@@ -2,18 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { 
-  Home, Calendar, Send, History, LogOut, LogIn, 
+  Home, Calendar, Send, History, LogOut, 
   ChevronLeft, ChevronRight, Heart, Gift, 
-  Image as ImageIcon, Menu, X, User as UserIcon
+  Image as ImageIcon, Menu, X, User as UserIcon,
+  Gamepad2
 } from 'lucide-react';
 import { useTheme } from '../ThemeConstants';
+import { supabase } from '../supabaseClient'; // ✅ อย่าลืมนำเข้า supabaseClient
 
 const Navbar = () => {
   const location = useLocation();
   const { currentTheme, nextTheme, prevTheme } = useTheme();
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // ✅ ควบคุมเมนูทั้งคอมและมือถือ
-  const userId = localStorage.getItem('user_id');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [pendingInvites, setPendingInvites] = useState(0); // ✅ 1. เพิ่ม State สำหรับคำเชิญ
   
+  const userId = localStorage.getItem('user_id');
   const ALLOWED_IDS = ["d8eb372a-d196-44fc-a73b-1809f27e0a56", "f384c03a-55bb-4d5f-b3f5-4f2052a9d00e"];
 
   const [userData, setUserData] = useState({
@@ -23,6 +26,30 @@ const Navbar = () => {
 
   const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
+
+  // ✅ 2. ดึงจำนวนคำเชิญและ Subscribe แบบ Real-time
+  useEffect(() => {
+    const checkInvites = async () => {
+        if (!userId) return;
+        // ใช้ .Eq ให้ถูกต้องตาม Library หรือ .eq (ตัวเล็ก)
+        const { count } = await supabase
+            .from('game_invitations')
+            .select('*', { count: 'exact', head: true })
+            .eq('guesser_id', userId)
+            .eq('status', 'pending');
+        
+        setPendingInvites(count || 0);
+    };
+
+    if (userId) {
+        checkInvites();
+        const channel = supabase.channel('invites')
+            .on('postgres_changes', { event: '*', table: 'game_invitations' }, checkInvites)
+            .subscribe();
+        
+        return () => supabase.removeChannel(channel);
+    }
+  }, [userId]);
 
   useEffect(() => {
     const syncProfile = async () => {
@@ -41,11 +68,6 @@ const Navbar = () => {
     if (userId) syncProfile();
   }, [location, userId, API_URL]);
 
-  // ปิดเมนูอัตโนมัติเมื่อเปลี่ยนหน้า
-  // useEffect(() => {
-  //   setIsMenuOpen(false);
-  // }, [location.pathname]);
-
   const handleLogout = () => {
     if (window.confirm("คุณต้องการออกจากระบบใช่หรือไม่? ❤️")) {
       localStorage.clear();
@@ -53,8 +75,12 @@ const Navbar = () => {
     }
   };
 
-  // ✅ รายการเมนูที่จะอยู่ใน Dropdown ทั้งหมด
   const navItems = [
+    { 
+      name: 'Mind Game', 
+      path: '/mind-game', // ✅ เปลี่ยนเป็น /mind-game ให้ตรงกับ App.jsx
+      icon: <Gamepad2 size={20} className="text-purple-500" /> 
+    },
     { name: 'Mood', path: '/mood', icon: <Heart size={20} className="text-rose-500" /> },
     { name: 'Wishlist', path: '/wishlist', icon: <Gift size={20} className="text-amber-500" /> },
     { name: 'Moments', path: '/moments', icon: <ImageIcon size={20} className="text-sky-500" /> },
@@ -67,7 +93,6 @@ const Navbar = () => {
   const themeColors = {
     home: 'border-rose-100 text-rose-600 bg-rose-50',
     newyear: 'border-yellow-200 text-yellow-600 bg-yellow-50',
-    // ... ใส่สีธีมอื่นๆ ตามที่นายมี
   };
 
   const activeColor = themeColors[currentTheme.id] || themeColors.home;
@@ -78,8 +103,6 @@ const Navbar = () => {
     <>
       <nav className={`bg-white/80 backdrop-blur-md sticky top-0 z-[100] border-b ${activeColor.split(' ')[0]} px-4 py-2`}>
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          
-          {/* ส่วนซ้าย: Logo */}
           <Link to="/" className="flex items-center gap-2 group shrink-0">
             <div className="w-9 h-9 rounded-xl shadow-md overflow-hidden group-hover:rotate-12 transition-transform border border-rose-50">
               <img src="/com2.jpg" alt="Logo" className="w-full h-full object-cover" />
@@ -89,15 +112,17 @@ const Navbar = () => {
             </span>
           </Link>
 
-          {/* ส่วนขวา: Home และปุ่มเปิดเมนู */}
           <div className="flex items-center gap-2">
-            <Link to="/" className={`p-2 rounded-xl transition-all ${location.pathname === '/' ? activeColor : 'text-slate-300 hover:text-rose-400'}`}>
+            {/* ✅ แสดงจุดแดงที่ปุ่ม Home ถ้ามีคำเชิญ เพื่อให้เห็นเด่นๆ ตั้งแต่ข้างนอก */}
+            <Link to="/" className={`relative p-2 rounded-xl transition-all ${location.pathname === '/' ? activeColor : 'text-slate-300 hover:text-rose-400'}`}>
               <Home size={22} />
+              {pendingInvites > 0 && (
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-600 rounded-full animate-ping"></span>
+              )}
             </Link>
 
             {userData.username && (
               <div className="flex items-center gap-2 pl-2 border-l border-slate-100">
-                {/* รูปโปรไฟล์แสดงข้างปุ่มเมนู */}
                 <Link to="/profile" className="hidden sm:block">
                     <img 
                         src={userData.avatarUrl && userData.avatarUrl !== 'null' ? userData.avatarUrl : `https://ui-avatars.com/api/?name=${userData.username}&background=random`} 
@@ -106,72 +131,79 @@ const Navbar = () => {
                     />
                 </Link>
                 
-                {/* ✅ ปุ่ม Hamburger Menu (ใช้ทั้งคอมและมือถือ) */}
                 <button 
                   onClick={() => setIsMenuOpen(!isMenuOpen)} 
-                  className={`p-2 rounded-xl transition-all ${isMenuOpen ? 'bg-rose-500 text-white' : 'text-slate-400 hover:bg-slate-50'}`}
+                  className={`relative p-2 rounded-xl transition-all ${isMenuOpen ? 'bg-rose-500 text-white' : 'text-slate-400 hover:bg-slate-50'}`}
                 >
                   {isMenuOpen ? <X size={26} /> : <Menu size={26} />}
+                  {/* ✅ จุดแดงที่ปุ่มเมนู Hamburger */}
+                  {!isMenuOpen && pendingInvites > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-[10px] font-black rounded-full flex items-center justify-center animate-bounce border-2 border-white">
+                      {pendingInvites}
+                    </span>
+                  )}
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* ✅ Universal Dropdown Menu: แสดงผลเหมือนกันทุกอุปกรณ์ */}
         {isMenuOpen && (
-  <div className="absolute top-full right-0 w-full sm:w-72 bg-white border-b sm:border-l border-rose-100 shadow-2xl animate-in slide-in-from-top sm:slide-in-from-right duration-200 
-    max-h-[85vh] overflow-y-auto custom-scrollbar"> {/* 👈 เพิ่ม max-height และ scroll */}
-    
-    <div className="p-3 flex flex-col gap-1"> {/* 👈 ลด padding */}
-      <div className="px-3 py-1.5 mb-1 border-b border-slate-50">
-          <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Menu Navigation</p>
-      </div>
-      
-      {navItems.map((item) => (
-        <Link 
-          key={item.name} 
-          to={item.path} 
-          onClick={() => setIsMenuOpen(false)}
-          className={`flex items-center gap-3 p-3 rounded-2xl font-bold text-xs uppercase italic transition-all ${
-            location.pathname === item.path ? activeColor : 'text-slate-500 hover:bg-rose-50 hover:text-rose-500'
-          }`}
-        > {/* 👈 ลดขนาดตัวอักษรและ padding ของแต่ละเมนู */}
-          <span className="p-1.5 bg-slate-50 rounded-xl group-hover:bg-white transition-colors">
-            {React.cloneElement(item.icon, { size: 18 })} {/* 👈 ลดขนาดไอคอน */}
-          </span>
-          {item.name}
-        </Link>
-      ))}
+          <div className="absolute top-full right-0 w-full sm:w-72 bg-white border-b sm:border-l border-rose-100 shadow-2xl animate-in slide-in-from-top sm:slide-in-from-right duration-200 max-h-[85vh] overflow-y-auto custom-scrollbar">
+            <div className="p-3 flex flex-col gap-1">
+              <div className="px-3 py-1.5 mb-1 border-b border-slate-50">
+                  <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Menu Navigation</p>
+              </div>
+              
+              {navItems.map((item) => (
+                <Link 
+                  key={item.name} 
+                  to={item.path} 
+                  onClick={() => setIsMenuOpen(false)}
+                  className={`relative flex items-center gap-3 p-3 rounded-2xl font-bold text-xs uppercase italic transition-all ${
+                    location.pathname === item.path ? activeColor : 'text-slate-500 hover:bg-rose-50 hover:text-rose-500'
+                  }`}
+                >
+                  <span className="p-1.5 bg-slate-50 rounded-xl group-hover:bg-white transition-colors">
+                    {React.cloneElement(item.icon, { size: 18 })}
+                  </span>
+                  {item.name}
 
-      {/* เมนู Admin */}
-      {ALLOWED_IDS.includes(userId) && (
-        <Link 
-          to="/homeadmin" 
-          onClick={() => setIsMenuOpen(false)}
-          className={`flex items-center gap-3 p-3 rounded-2xl font-bold text-xs uppercase italic transition-all ${
-            location.pathname === '/homeadmin' ? activeColor : 'text-rose-600 bg-rose-50/50 hover:bg-rose-100'
-          }`}
-        >
-          <span className="p-1.5 bg-white rounded-xl shadow-sm">
-            <Home size={18} className="text-rose-500" />
-          </span>
-          ⚙️ ตั้งค่าหน้า Home
-        </Link>
-      )}
+                  {/* ✅ 3. จุดแจ้งเตือนสีแดงในแถบรายการ Mind Game */}
+                  {item.name === 'Mind Game' && pendingInvites > 0 && (
+                    <span className="absolute right-4 w-5 h-5 bg-red-600 text-white text-[10px] font-black rounded-full flex items-center justify-center animate-bounce border-2 border-white shadow-sm">
+                        {pendingInvites}
+                    </span>
+                  )}
+                </Link>
+              ))}
 
-      <div className="mt-2 pt-2 border-t border-slate-50">
-        <button onClick={handleLogout} className="flex items-center gap-3 w-full p-3 rounded-2xl font-bold text-xs uppercase italic text-rose-500 hover:bg-rose-50 transition-all">
-          <span className="p-1.5 bg-rose-100/50 rounded-xl"><LogOut size={18} /></span>
-          ออกจากระบบ
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+              {ALLOWED_IDS.includes(userId) && (
+                <Link 
+                  to="/homeadmin" 
+                  onClick={() => setIsMenuOpen(false)}
+                  className={`flex items-center gap-3 p-3 rounded-2xl font-bold text-xs uppercase italic transition-all ${
+                    location.pathname === '/homeadmin' ? activeColor : 'text-rose-600 bg-rose-50/50 hover:bg-rose-100'
+                  }`}
+                >
+                  <span className="p-1.5 bg-white rounded-xl shadow-sm">
+                    <Home size={18} className="text-rose-500" />
+                  </span>
+                  ⚙️ ตั้งค่าหน้า Home
+                </Link>
+              )}
+
+              <div className="mt-2 pt-2 border-t border-slate-50">
+                <button onClick={handleLogout} className="flex items-center gap-3 w-full p-3 rounded-2xl font-bold text-xs uppercase italic text-rose-500 hover:bg-rose-50 transition-all">
+                  <span className="p-1.5 bg-rose-100/50 rounded-xl"><LogOut size={18} /></span>
+                  ออกจากระบบ
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
-      {/* Seasonal Buttons */}
       <div className="fixed bottom-6 left-6 z-[999]">
         <button onClick={prevTheme} className="bg-white/80 backdrop-blur-md p-3 rounded-full shadow-lg border border-rose-100 text-rose-500 active:scale-90 transition-all"><ChevronLeft size={20} /></button>
       </div>

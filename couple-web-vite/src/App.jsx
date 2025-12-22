@@ -12,6 +12,10 @@ import MoodPage from './pages/MoodPage';
 import WishlistPage from './pages/WishlistPage';
 import MomentPage from './pages/MomentPage';
 import HomeAdminPage from './pages/HomeAdminPage';
+import MindGame from './pages/MindGame';
+import PlayMindGame from './pages/PlayMindGame';
+import GameSession from './pages/GameSession';
+import CreateLevel from './pages/CreateLevel';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -22,6 +26,11 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
+  const user = {
+    id: localStorage.getItem('user_id'),
+    username: localStorage.getItem('username')
+  };
+
   return (
     /* ✨ 2. นำ ThemeProvider มาครอบ Router ไว้ เพื่อให้ Navbar และหน้าอื่นๆ ใช้ useTheme ได้ */
     <ThemeProvider>
@@ -32,67 +41,99 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          <Route 
-            path="/create" 
+          <Route
+            path="/create"
             element={
               <ProtectedRoute>
                 <CreateRequest />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/history" 
+          <Route
+            path="/history"
             element={
               <ProtectedRoute>
                 <HistoryPage />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/calendar" 
+          <Route
+            path="/calendar"
             element={
               <ProtectedRoute>
                 <CalendarPage />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/profile" 
+          <Route
+            path="/profile"
             element={
               <ProtectedRoute>
                 <ProfilePage />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/mood" 
+          <Route
+            path="/mood"
             element={
               <ProtectedRoute>
                 <MoodPage />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/wishlist" 
+          <Route
+            path="/wishlist"
             element={
               <ProtectedRoute>
                 <WishlistPage />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/moments" 
+          <Route
+            path="/moments"
             element={
               <ProtectedRoute>
                 <MomentPage />
               </ProtectedRoute>
-            } 
+            }
           />
           <Route
             path="/homeadmin"
             element={
               <ProtectedRoute>
                 <HomeAdminPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mind-game" // ✅ เปลี่ยนจาก /mindgame เป็น /mind-game
+            element={
+              <ProtectedRoute>
+                <MindGame user={user} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/playmindgame/:id" // ✅ หน้าเลือกโหมด
+            element={
+              <ProtectedRoute>
+                <PlayMindGame user={user} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/game-session/:id"
+            element={
+              <ProtectedRoute>
+                <GameSession user={user} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/create-level"
+            element={
+              <ProtectedRoute>
+                <CreateLevel />
               </ProtectedRoute>
             }
           />
