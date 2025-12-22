@@ -214,15 +214,17 @@ const prevImage = () => {
 
       <div className="max-w-7xl w-full mx-auto flex flex-col lg:flex-row gap-6 md:gap-12 items-center justify-center z-10">
         
-        <div className="hidden lg:flex flex-col gap-6 absolute left-4 xl:left-10 top-1/4 z-20">
-          {showFixedPhotos && (
+        {/* 1. ส่วนรูปภาพด้านซ้าย (เดิมซ่อนในมือถือ ตอนนี้เราจะให้โชว์แบบแนวนอนบนมือถือด้วย) */}
+    <div className="flex lg:flex-col gap-4 lg:gap-6 lg:absolute left-4 xl:left-10 lg:top-1/4 z-20 justify-center">
+        {showFixedPhotos && (
             <>
-              <FixedPhoto src={FIXED_PHOTOS[0]} rotate={-12} isVisible={showFixedPhotos} />
-              <FixedPhoto src={FIXED_PHOTOS[1]} rotate={8} isVisible={showFixedPhotos} />
-              <FixedPhoto src={FIXED_PHOTOS[2]} rotate={-5} isVisible={showFixedPhotos} />
+                <FixedPhoto src={FIXED_PHOTOS[0]} rotate={-12} isVisible={showFixedPhotos} />
+                <FixedPhoto src={FIXED_PHOTOS[1]} rotate={8} isVisible={showFixedPhotos} />
+                {/* เพิ่มรูปที่ 3 ให้โชว์ในมือถือด้วย */}
+                <FixedPhoto src={FIXED_PHOTOS[2]} rotate={-5} isVisible={showFixedPhotos} />
             </>
-          )}
-        </div>
+        )}
+    </div>
 
         <div className="flex-1 w-full max-w-lg order-2 lg:order-1">
           <div className="bg-white p-6 md:p-8 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl border border-rose-100 w-full text-center relative overflow-hidden">
@@ -297,12 +299,12 @@ const prevImage = () => {
 
           <div className="flex justify-center lg:justify-end gap-4 pt-2 px-2">
             {showFixedPhotos && (
-              <>
-                <FixedPhoto src={FIXED_PHOTOS[3]} rotate={12} isVisible={showFixedPhotos} />
-                <FixedPhoto src={FIXED_PHOTOS[4]} rotate={-8} isVisible={showFixedPhotos} />
-              </>
+                <>
+                    <FixedPhoto src={FIXED_PHOTOS[3]} rotate={12} isVisible={showFixedPhotos} />
+                    <FixedPhoto src={FIXED_PHOTOS[4]} rotate={-8} isVisible={showFixedPhotos} />
+                </>
             )}
-          </div>
+        </div>
         </div>
       </div>
     </div>
