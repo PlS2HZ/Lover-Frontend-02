@@ -1,20 +1,40 @@
-import React, { useState, useEffect } from 'react'; // ✅ เพิ่ม useEffect
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import axios from 'axios'; // ✅ เพิ่ม axios เพื่อดึงข้อมูลสด
 import { Home, Calendar, Send, History, LogOut, LogIn, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '../ThemeConstants';
 
 const Navbar = () => {
   const location = useLocation();
   const { currentTheme, nextTheme, prevTheme } = useTheme();
+  const userId = localStorage.getItem('user_id');
   
-  // ✅ ใช้ State จัดการเพื่อรองรับการเปลี่ยนรูปทันทีโดยไม่ต้อง Refresh หน้าจอ
   const [userData, setUserData] = useState({
     username: localStorage.getItem('username'),
     avatarUrl: localStorage.getItem('avatar_url')
   });
 
-  // ✅ ดักจับการเปลี่ยนแปลงของข้อมูล (เผื่อนายอัปเดตโปรไฟล์จากหน้าอื่น)
+  const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
+
+  // ✅ ดักจับการเปลี่ยนแปลงและซิงค์ข้อมูลจาก Database
   useEffect(() => {
+    const syncProfile = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/users`);
+        if (Array.isArray(res.data)) {
+          const me = res.data.find(u => u.id === userId);
+          if (me) {
+            setUserData({ username: me.username, avatarUrl: me.avatar_url });
+            localStorage.setItem('username', me.username);
+            localStorage.setItem('avatar_url', me.avatar_url);
+          }
+        }
+      } catch (err) { console.error("Navbar Sync Error:", err); }
+    };
+
+    if (userId) syncProfile();
+
     const handleStorageChange = () => {
       setUserData({
         username: localStorage.getItem('username'),
@@ -22,12 +42,9 @@ const Navbar = () => {
       });
     };
 
-    // เช็คข้อมูลทุกครั้งที่เปลี่ยนหน้า (Location Change)
-    handleStorageChange();
-
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [location]);
+  }, [location, userId, API_URL]);
 
   const handleLogout = () => {
     if (window.confirm("คุณต้องการออกจากระบบใช่หรือไม่? ❤️")) {
@@ -87,14 +104,14 @@ const Navbar = () => {
             {userData.username ? (
               <div className="flex items-center gap-2 ml-2 pl-2 border-l border-slate-100">
                 <Link to="/profile" className="flex items-center gap-2 group">
-                  {/* ✅ แก้ไขจุดนี้: เช็ค URL รูปภาพให้ละเอียดขึ้น */}
+                  {/* ✅ แก้ไขจุดนี้: แสดงผลรูปจริงจาก Database หรือ UI Avatar */}
                   <img 
-                    src={userData.avatarUrl && userData.avatarUrl !== 'null' && userData.avatarUrl !== '' 
+                    src={userData.avatarUrl && userData.avatarUrl !== 'null' && userData.avatarUrl !== 'NULL' && userData.avatarUrl !== '' 
                       ? userData.avatarUrl 
                       : `https://ui-avatars.com/api/?name=${userData.username}&background=random`} 
                     className="w-9 h-9 rounded-full border-2 border-white shadow-sm object-cover group-hover:border-rose-300 transition-all bg-slate-50"
                     alt="Avatar"
-                    key={userData.avatarUrl} // บังคับ Re-render เมื่อ URL เปลี่ยน
+                    key={userData.avatarUrl} 
                   />
                   <span className="text-xs font-black text-slate-700 uppercase hidden md:block">{userData.username}</span>
                 </Link>
@@ -113,7 +130,6 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* ปุ่มเปลี่ยน Season ยังคงเดิม */}
       <div className="fixed bottom-6 left-6 z-[999] flex flex-col items-center gap-2">
         <button onClick={prevTheme} className="bg-white/80 backdrop-blur-md p-4 rounded-full shadow-lg border border-rose-100 text-rose-500 hover:scale-110 active:scale-90 transition-all">
           <ChevronLeft size={24} />
