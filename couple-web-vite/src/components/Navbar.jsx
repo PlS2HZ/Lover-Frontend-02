@@ -68,13 +68,13 @@ const Navbar = () => {
   };
 
   const navItems = [
-    { name: 'Home', path: '/', icon: <Home size={18} /> }, 
+    { name: 'Home', path: '/', icon: <Home size={18} className="text-rose-500" /> }, 
     { name: 'Mood', path: '/mood', icon: <Heart size={18} className="text-rose-500" /> },
     { name: 'Wishlist', path: '/wishlist', icon: <Gift size={18} className="text-rose-500" /> },
-    { name: 'Moments', path: '/moments', icon: <ImageIcon size={18} /> },
-    { name: 'Calendar', path: '/calendar', icon: <Calendar size={18} /> },
-    { name: 'Request', path: '/create', icon: <Send size={18} /> },
-    { name: 'History', path: '/history', icon: <History size={18} /> },
+    { name: 'Moments', path: '/moments', icon: <ImageIcon size={18} className="text-rose-500" /> },
+    { name: 'Calendar', path: '/calendar', icon: <Calendar size={18} className="text-rose-500" /> },
+    { name: 'Request', path: '/create', icon: <Send size={18} className="text-rose-500" /> },
+    { name: 'History', path: '/history', icon: <History size={18} className="text-rose-500" /> },
   ];
 
   const themeColors = {
