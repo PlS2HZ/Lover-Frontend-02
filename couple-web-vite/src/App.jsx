@@ -11,6 +11,7 @@ import ProfilePage from './pages/ProfilePage';
 import MoodPage from './pages/MoodPage';
 import WishlistPage from './pages/WishlistPage';
 import MomentPage from './pages/MomentPage';
+import HomeAdminPage from './pages/HomeAdminPage';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -86,6 +87,14 @@ function App() {
                 <MomentPage />
               </ProtectedRoute>
             } 
+          />
+          <Route
+            path="/homeadmin"
+            element={
+              <ProtectedRoute>
+                <HomeAdminPage />
+              </ProtectedRoute>
+            }
           />
         </Routes>
       </Router>

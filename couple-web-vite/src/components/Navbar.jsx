@@ -14,6 +14,8 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false); // ✅ ควบคุมเมนูทั้งคอมและมือถือ
   const userId = localStorage.getItem('user_id');
   
+  const ALLOWED_IDS = ["d8eb372a-d196-44fc-a73b-1809f27e0a56", "f384c03a-55bb-4d5f-b3f5-4f2052a9d00e"];
+
   const [userData, setUserData] = useState({
     username: localStorage.getItem('username'),
     avatarUrl: localStorage.getItem('avatar_url')
@@ -118,40 +120,55 @@ const Navbar = () => {
 
         {/* ✅ Universal Dropdown Menu: แสดงผลเหมือนกันทุกอุปกรณ์ */}
         {isMenuOpen && (
-          <div className="absolute top-full right-0 w-full sm:w-80 bg-white border-b sm:border-l border-rose-100 shadow-2xl animate-in slide-in-from-top sm:slide-in-from-right duration-200">
-            <div className="p-4 flex flex-col gap-1">
-              <div className="px-4 py-2 mb-2 border-b border-slate-50">
-                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Menu Navigation</p>
-              </div>
-              
-              {navItems.map((item) => (
-  <Link 
-    key={item.name} 
-    to={item.path} 
-    onClick={() => setIsMenuOpen(false)} // ✅ สั่งปิดเมนูเมื่อมีการคลิกเลือกหน้า
-    className={`flex items-center gap-4 p-4 rounded-2xl font-black text-sm uppercase italic transition-all ${
-      location.pathname === item.path ? activeColor : 'text-slate-500 hover:bg-rose-50 hover:text-rose-500'
-    }`}
-  >
-    <span className="p-2 bg-slate-50 rounded-xl group-hover:bg-white transition-colors">
-      {item.icon}
-    </span>
-    {item.name}
-  </Link>
-))}
+  <div className="absolute top-full right-0 w-full sm:w-72 bg-white border-b sm:border-l border-rose-100 shadow-2xl animate-in slide-in-from-top sm:slide-in-from-right duration-200 
+    max-h-[85vh] overflow-y-auto custom-scrollbar"> {/* 👈 เพิ่ม max-height และ scroll */}
+    
+    <div className="p-3 flex flex-col gap-1"> {/* 👈 ลด padding */}
+      <div className="px-3 py-1.5 mb-1 border-b border-slate-50">
+          <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Menu Navigation</p>
+      </div>
+      
+      {navItems.map((item) => (
+        <Link 
+          key={item.name} 
+          to={item.path} 
+          onClick={() => setIsMenuOpen(false)}
+          className={`flex items-center gap-3 p-3 rounded-2xl font-bold text-xs uppercase italic transition-all ${
+            location.pathname === item.path ? activeColor : 'text-slate-500 hover:bg-rose-50 hover:text-rose-500'
+          }`}
+        > {/* 👈 ลดขนาดตัวอักษรและ padding ของแต่ละเมนู */}
+          <span className="p-1.5 bg-slate-50 rounded-xl group-hover:bg-white transition-colors">
+            {React.cloneElement(item.icon, { size: 18 })} {/* 👈 ลดขนาดไอคอน */}
+          </span>
+          {item.name}
+        </Link>
+      ))}
 
-              <div className="mt-4 pt-4 border-t border-slate-50">
-                <button 
-                    onClick={handleLogout} 
-                    className="flex items-center gap-4 w-full p-4 rounded-2xl font-black text-sm uppercase italic text-rose-500 hover:bg-rose-50 transition-all"
-                >
-                  <span className="p-2 bg-rose-100/50 rounded-xl"><LogOut size={20} /></span>
-                  ออกจากระบบ
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+      {/* เมนู Admin */}
+      {ALLOWED_IDS.includes(userId) && (
+        <Link 
+          to="/homeadmin" 
+          onClick={() => setIsMenuOpen(false)}
+          className={`flex items-center gap-3 p-3 rounded-2xl font-bold text-xs uppercase italic transition-all ${
+            location.pathname === '/homeadmin' ? activeColor : 'text-rose-600 bg-rose-50/50 hover:bg-rose-100'
+          }`}
+        >
+          <span className="p-1.5 bg-white rounded-xl shadow-sm">
+            <Home size={18} className="text-rose-500" />
+          </span>
+          ⚙️ ตั้งค่าหน้า Home
+        </Link>
+      )}
+
+      <div className="mt-2 pt-2 border-t border-slate-50">
+        <button onClick={handleLogout} className="flex items-center gap-3 w-full p-3 rounded-2xl font-bold text-xs uppercase italic text-rose-500 hover:bg-rose-50 transition-all">
+          <span className="p-1.5 bg-rose-100/50 rounded-xl"><LogOut size={18} /></span>
+          ออกจากระบบ
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       </nav>
 
       {/* Seasonal Buttons */}
