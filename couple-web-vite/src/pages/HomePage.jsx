@@ -35,7 +35,7 @@ const generateMosaicPieces = () => {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const rows = isMobile ? 8 : 10; // ปรับจำนวนแถวให้ละเอียดขึ้นสำหรับมือถือ
   const cols = isMobile ? 6 : 10; 
-  const mosaicPhoto = isMobile ? "/mb8.jpg" : "/com2.jpg";
+  const mosaicPhoto = isMobile ? "/mb4.jpg" : "/com2.jpg";
 
   const pieces = [];
   for (let r = 0; r < rows; r++) {
