@@ -9,6 +9,8 @@ import Register from './pages/Register';
 import CalendarPage from './pages/CalendarPage';
 import ProfilePage from './pages/ProfilePage';
 import MoodPage from './pages/MoodPage';
+import WishlistPage from './pages/WishlistPage';
+import MomentPage from './pages/MomentPage';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -66,6 +68,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <MoodPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/wishlist" 
+            element={
+              <ProtectedRoute>
+                <WishlistPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/moments" 
+            element={
+              <ProtectedRoute>
+                <MomentPage />
               </ProtectedRoute>
             } 
           />
