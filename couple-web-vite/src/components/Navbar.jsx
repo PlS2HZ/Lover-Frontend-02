@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios'; // ✅ เพิ่ม axios เพื่อดึงข้อมูลสด
 import { Home, Calendar, Send, History, LogOut, LogIn, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '../ThemeConstants';
+import { Heart } from 'lucide-react';
 
 const Navbar = () => {
   const location = useLocation();
@@ -55,6 +56,7 @@ const Navbar = () => {
 
   const navItems = [
     { name: 'Home', path: '/', icon: <Home size={18} /> }, 
+    { name: 'Mood', path: '/mood', icon: <Heart size={18} className="text-rose-500" /> },
     { name: 'Calendar', path: '/calendar', icon: <Calendar size={18} /> },
     { name: 'Request', path: '/create', icon: <Send size={18} /> },
     { name: 'History', path: '/history', icon: <History size={18} /> },
