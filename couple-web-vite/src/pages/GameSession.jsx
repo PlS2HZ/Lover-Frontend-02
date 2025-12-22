@@ -39,27 +39,22 @@ const GameSession = ({ user }) => {
     // ✅ แก้ไข useEffect ให้ดึงข้อมูลแบบ Asynchronous ภายใน
 useEffect(() => {
     let active = true;
+    const initFetch = async () => { if (active) await fetchMessages(); };
+    initFetch();
 
-    const loadInitialData = async () => {
-        if (active) {
-            await fetchMessages(); // เรียกใช้ผ่าน async function ภายใน
-        }
-    };
-
-    loadInitialData();
-
-    // ส่วนของ Real-time Subscription
-    const channel = supabase.channel(`game-session-${id}`)
+    // ✅ ใช้ '*' เพื่อดึงทุกเหตุการณ์ (INSERT/UPDATE) ในตารางเดียว
+    const channel = supabase.channel(`game-realtime-${id}`)
         .on('postgres_changes', 
             { event: '*', table: 'game_messages', filter: `game_id=eq.${id}` }, 
-            () => {
-                if (active) fetchMessages();
+            (payload) => {
+                console.log("Change detected:", payload);
+                if (active) fetchMessages(); // ดึงข้อมูลใหม่มาแสดงทันที
             }
         )
         .subscribe();
 
     return () => {
-        active = false; // ป้องกันการ setState บน Component ที่ถูก Unmount ไปแล้ว
+        active = false;
         supabase.removeChannel(channel);
     };
 }, [id, fetchMessages]);
@@ -127,20 +122,23 @@ useEffect(() => {
                     </div>
                 )}
                 {messages.map(m => (
-                    <div key={m.id} className="flex flex-col items-start animate-in fade-in slide-in-from-left-2">
-                        <div className="bg-white border-2 border-slate-50 p-4 rounded-[1.8rem] rounded-tl-none shadow-sm font-bold text-slate-700 text-sm max-w-[85%]">
-                            {m.message}
-                        </div>
-                        {m.answer && (
-                            <div className={`mt-2 flex items-center gap-2 px-3 py-1 rounded-full font-black italic text-[10px] uppercase shadow-sm ${
-                                m.answer === 'ถูกต้อง' ? 'bg-yellow-400 text-white' : 
-                                m.answer === 'ใช่' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-                            }`}>
-                                {m.answer === 'ถูกต้อง' ? '🎉 ทายถูกแล้ว!' : m.answer}
-                            </div>
-                        )}
-                    </div>
-                ))}
+    <div key={m.id} className="mb-4">
+        <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 font-bold">
+            {m.message}
+        </div>
+        
+        {/* ✅ ถ้ามีคำตอบให้โชว์ ถ้าไม่มีและเป็นโหมดบอท ให้โชว์ว่ากำลังคิด... */}
+        {m.answer ? (
+            <div className="mt-1 ml-4 text-xs font-black text-rose-500 italic uppercase">
+                Bot: {m.answer}
+            </div>
+        ) : mode === 'bot' && (
+            <div className="mt-1 ml-4 text-[10px] text-slate-300 animate-pulse font-bold italic">
+                Gemini is thinking...
+            </div>
+        )}
+    </div>
+))}
             </div>
 
             {/* Win Overlay */}

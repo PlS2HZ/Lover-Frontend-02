@@ -24,7 +24,8 @@ const CreateLevel = () => { // ❌ เอา { user } ออก เพราะ�
                 .insert([{
                     host_id: userId, // ✅ ใช้ userId ที่ดึงมา
                     secret_word: secretWord,
-                    is_template: true
+                    is_template: true,
+                    use_bot: true
                 }]);
             
             if (error) throw error;
