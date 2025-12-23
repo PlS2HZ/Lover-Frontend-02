@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom'; // ✅ ต้องมี useNavigate เพิ่มเข้ามา
 import axios from 'axios';
 import { 
   Home, Calendar, Send, History, LogOut, 
@@ -12,6 +12,7 @@ import { supabase } from '../supabaseClient'; // ✅ อย่าลืมนำ
 
 const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { currentTheme, nextTheme, prevTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [pendingInvites, setPendingInvites] = useState(0); // ✅ 1. เพิ่ม State สำหรับคำเชิญ
@@ -26,6 +27,8 @@ const Navbar = () => {
 
   const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
+
+    
 
   // ✅ 2. ดึงจำนวนคำเชิญและ Subscribe แบบ Real-time
   useEffect(() => {
@@ -71,7 +74,7 @@ const Navbar = () => {
   const handleLogout = () => {
     if (window.confirm("คุณต้องการออกจากระบบใช่หรือไม่? ❤️")) {
       localStorage.clear();
-      window.location.href = "/login";
+      navigate("/login");
     }
   };
 
@@ -164,18 +167,21 @@ const Navbar = () => {
                     location.pathname === item.path ? activeColor : 'text-slate-500 hover:bg-rose-50 hover:text-rose-500'
                   }`}
                 >
-                  <span className="p-1.5 bg-slate-50 rounded-xl group-hover:bg-white transition-colors">
-                    {React.cloneElement(item.icon, { size: 18 })}
-                  </span>
-                  {item.name}
+                  <span className="p-1.5 bg-slate-50 rounded-xl group-hover:bg-white transition-colors relative">
+      {React.cloneElement(item.icon, { size: 18 })}
+      {/* ✅ โชว์จุดแดงเฉพาะเมนูที่ไม่ใช่หน้าแรก (/) */}
+      {pendingInvites > 0 && item.path !== '/' && item.name === 'Mind Game' && (
+        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
+      )}
+    </span>
+    {item.name}
 
-                  {/* ✅ 3. จุดแจ้งเตือนสีแดงในแถบรายการ Mind Game */}
-                  {item.name === 'Mind Game' && pendingInvites > 0 && (
-                    <span className="absolute right-4 w-5 h-5 bg-red-600 text-white text-[10px] font-black rounded-full flex items-center justify-center animate-bounce border-2 border-white shadow-sm">
-                        {pendingInvites}
-                    </span>
-                  )}
-                </Link>
+    {item.name === 'Mind Game' && pendingInvites > 0 && (
+      <span className="absolute right-4 w-5 h-5 bg-red-600 text-white text-[10px] font-black rounded-full flex items-center justify-center animate-bounce border-2 border-white shadow-sm">
+          {pendingInvites}
+      </span>
+    )}
+  </Link>
               ))}
 
               {ALLOWED_IDS.includes(userId) && (

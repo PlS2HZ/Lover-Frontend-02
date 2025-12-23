@@ -5,6 +5,7 @@ import { Heart, ArrowLeft, Save } from 'lucide-react';
 
 const CreateLevel = () => { // ❌ เอา { user } ออก เพราะเราจะดึงจาก localStorage แทนเพื่อความชัวร์
     const [secretWord, setSecretWord] = useState("");
+    const [description, setDescription] = useState("");
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     
@@ -24,6 +25,7 @@ const CreateLevel = () => { // ❌ เอา { user } ออก เพราะ�
                 .insert([{
                     host_id: userId, // ✅ ใช้ userId ที่ดึงมา
                     secret_word: secretWord,
+                    description: description,
                     is_template: true,
                     //use_bot: true
                 }]);
@@ -51,12 +53,18 @@ const CreateLevel = () => { // ❌ เอา { user } ออก เพราะ�
                 <p className="text-xs font-bold text-slate-400 uppercase italic mb-8">คำในใจที่อยากให้แฟนทายคืออะไร?</p>
 
                 <input 
-                    type="text"
-                    className="w-full p-4 rounded-2xl border-2 border-slate-100 focus:border-pink-500 focus:outline-none mb-6 text-center font-bold text-lg"
-                    placeholder="เช่น... รถมอเตอร์ไซค์"
-                    value={secretWord}
-                    onChange={(e) => setSecretWord(e.target.value)}
-                />
+    type="text"
+    className="w-full p-4 rounded-2xl border-2 border-slate-100 focus:border-pink-500 focus:outline-none mb-4 text-center font-bold text-lg"
+    placeholder="คำลับของคุณคืออะไร? (เช่น รถมอเตอร์ไซค์)"
+    value={secretWord}
+    onChange={(e) => setSecretWord(e.target.value)}
+/>
+<textarea 
+    className="w-full p-4 rounded-2xl border-2 border-slate-100 focus:border-pink-500 focus:outline-none mb-6 text-sm font-bold min-h-[100px]"
+    placeholder="อธิบายลักษณะเด่นของคำลับนี้หน่อย (เช่น มี 2 ล้อ ใช้เครื่องยนต์) ข้อมูลนี้จะช่วยให้บอท AI ฉลาดขึ้น!"
+    value={description}
+    onChange={(e) => setDescription(e.target.value)}
+/>
 
                 <button 
                     onClick={handleCreate}

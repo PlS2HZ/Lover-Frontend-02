@@ -109,34 +109,36 @@ useEffect(() => {
       <div className="max-w-2xl mx-auto p-4 space-y-4 mt-4">
         
         {/* ✅ กล่องแจ้งเตือนคำเชิญ (Invitation Box) - ย้ายมาไว้นอกลูป map */}
-        {invites.length > 0 && (
-          <div className="mb-8 space-y-3">
-            <h3 className="text-rose-500 font-black italic text-xs uppercase tracking-widest px-2">⚠️ มีคนท้าทายคุณ!</h3>
-            {invites.map(inv => (
-              <div key={inv.id} className="bg-white border-2 border-rose-100 p-5 rounded-[2.5rem] shadow-xl flex items-center justify-between animate-bounce">
-                <div className="flex items-center gap-3">
-                  <div className="bg-rose-500 text-white p-3 rounded-2xl">
-                    <Heart size={20} fill="currentColor" />
-                  </div>
-                  <div>
-                    <p className="font-black italic text-slate-800 uppercase text-sm">
-                      {inv.host?.username} ท้าคุณ!
-                    </p>
-                    <p className="text-[10px] font-bold text-slate-400 italic">เขากำลังรอให้คุณตอบ ใช่/ไม่ใช่</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => navigate(`/game-session/${inv.sessions?.id}?mode=human`)}
-                  className="bg-slate-900 text-white px-6 py-2 rounded-full font-black text-[10px] uppercase italic hover:bg-rose-500 transition-colors shadow-lg shadow-rose-100"
-                >
-                  รับคำท้า
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* ✅ กล่องแจ้งเตือนคำเชิญ */}
+{invites.length > 0 && (
+  <div className="max-w-2xl mx-auto px-4 mt-6">
+    <div className="bg-gradient-to-r from-rose-500 to-pink-600 p-6 rounded-[2.5rem] text-white shadow-xl mb-6 animate-in slide-in-from-top duration-500">
+      <div className="flex items-center gap-4 mb-4">
+        <div className="bg-white/20 p-3 rounded-2xl">
+          <Heart className="animate-pulse" fill="white" size={24} />
+        </div>
+        <div>
+          <h3 className="font-black italic uppercase text-lg leading-tight">มีคนท้าคุณ!</h3>
+          <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest">แฟนกำลังรอคำตอบอยู่ในเกม</p>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {invites.map(inv => (
+          <button 
+            key={inv.id}
+            onClick={() => navigate(`/game-session/${inv.sessions?.id}?mode=human`)} // ✅ วาร์ปเข้า Session
+            className="w-full bg-white text-slate-900 py-3 rounded-2xl font-black uppercase italic text-xs hover:bg-rose-50 transition-all flex justify-between px-6 items-center shadow-md active:scale-95"
+          >
+            <span>รับคำท้าของ {inv.host?.username}</span>
+            <ChevronRight size={18} className="text-rose-500" />
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
 
-        {loading ? (
+{loading ? ( // ของเดิมที่มีอยู่แล้ว
           <div className="text-center py-20">
             <div className="animate-spin w-10 h-10 border-4 border-rose-500 border-t-transparent rounded-full mx-auto mb-4"></div>
             <p className="text-slate-400 font-bold italic text-sm">กำลังโหลดคลังโจทย์...</p>

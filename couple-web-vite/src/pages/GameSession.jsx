@@ -36,28 +36,39 @@ const GameSession = ({ user }) => {
         }
     }, [id]);
 
-    // ✅ แก้ไข useEffect ให้ดึงข้อมูลแบบ Asynchronous ภายใน
+    // ใน GameSession.jsx
+
 useEffect(() => {
     let active = true;
     const initFetch = async () => { if (active) await fetchMessages(); };
     initFetch();
 
-    // ✅ ใช้ '*' เพื่อดึงทุกเหตุการณ์ (INSERT/UPDATE) ในตารางเดียว
-    const channel = supabase.channel(`game-realtime-${id}`)
-        .on('postgres_changes', 
-            { event: '*', table: 'game_messages', filter: `game_id=eq.${id}` }, 
-            (payload) => {
-                console.log("Change detected:", payload);
-                if (active) fetchMessages(); // ดึงข้อมูลใหม่มาแสดงทันที
+    // ✅ แก้ไข: เปลี่ยน gameId เป็น id
+    const channel = supabase.channel('chat')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          table: 'game_messages', 
+          filter: `game_id=eq.${id}` // 👈 เปลี่ยนตรงนี้จาก gameId เป็น id
+        }, 
+        (payload) => {
+            if (payload.eventType === 'INSERT') {
+                setMessages(prev => [...prev, payload.new]); 
+            } else if (payload.eventType === 'UPDATE') {
+                setMessages(prev => prev.map(msg => msg.id === payload.new.id ? payload.new : msg));
+                
+                // ✅ เพิ่มเติม: ถ้า AI หรือแฟนตอบว่า "ถูกต้อง" ให้จบเกมและหยุดเวลาทันที
+                if (payload.new.answer === 'ถูกต้อง') {
+                    setIsFinished(true);
+                }
             }
-        )
-        .subscribe();
+      }).subscribe();
 
     return () => {
         active = false;
         supabase.removeChannel(channel);
     };
-}, [id, fetchMessages]);
+}, [id, fetchMessages]); // id ตรงนี้ถูกแล้ว
 
     // ⏱️ ระบบจับเวลา (ทำงานเฉพาะตอนเกมยังไม่จบ)
     useEffect(() => {
