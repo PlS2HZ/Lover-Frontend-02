@@ -167,12 +167,12 @@ const Navbar = () => {
         )}
       </nav>
 
-      <div className="fixed bottom-6 left-6 z-[999]">
+      {/* <div className="fixed bottom-6 left-6 z-[999]">
         <button onClick={prevTheme} className="bg-white/80 backdrop-blur-md p-3 rounded-full shadow-lg border border-rose-100 text-rose-500 active:scale-90 transition-all"><ChevronLeft size={20} /></button>
       </div>
       <div className="fixed bottom-6 right-6 z-[999]">
         <button onClick={nextTheme} className="bg-white/80 backdrop-blur-md p-3 rounded-full shadow-lg border border-rose-100 text-rose-500 active:scale-90 transition-all"><ChevronRight size={20} /></button>
-      </div>
+      </div> */}
     </>
   );
 };
