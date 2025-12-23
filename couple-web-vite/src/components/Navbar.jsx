@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom'; // ✅ ต้องมี useNavigate เพิ่มเข้ามา
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
   Home, Calendar, Send, History, LogOut, 
@@ -8,14 +8,14 @@ import {
   Gamepad2
 } from 'lucide-react';
 import { useTheme } from '../ThemeConstants';
-import { supabase } from '../supabaseClient'; // ✅ อย่าลืมนำเข้า supabaseClient
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentTheme, nextTheme, prevTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [pendingInvites, setPendingInvites] = useState(0); // ✅ 1. เพิ่ม State สำหรับคำเชิญ
+  
+  // ✅ ลบ State pendingInvites และฟังก์ชัน checkInvites ออกทั้งหมด
   
   const userId = localStorage.getItem('user_id');
   const ALLOWED_IDS = ["d8eb372a-d196-44fc-a73b-1809f27e0a56", "f384c03a-55bb-4d5f-b3f5-4f2052a9d00e"];
@@ -27,32 +27,6 @@ const Navbar = () => {
 
   const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
-
-    
-
-  // ✅ 2. ดึงจำนวนคำเชิญและ Subscribe แบบ Real-time
-  useEffect(() => {
-    const checkInvites = async () => {
-        if (!userId) return;
-        // ใช้ .Eq ให้ถูกต้องตาม Library หรือ .eq (ตัวเล็ก)
-        const { count } = await supabase
-            .from('game_invitations')
-            .select('*', { count: 'exact', head: true })
-            .eq('guesser_id', userId)
-            .eq('status', 'pending');
-        
-        setPendingInvites(count || 0);
-    };
-
-    if (userId) {
-        checkInvites();
-        const channel = supabase.channel('invites')
-            .on('postgres_changes', { event: '*', table: 'game_invitations' }, checkInvites)
-            .subscribe();
-        
-        return () => supabase.removeChannel(channel);
-    }
-  }, [userId]);
 
   useEffect(() => {
     const syncProfile = async () => {
@@ -81,7 +55,7 @@ const Navbar = () => {
   const navItems = [
     { 
       name: 'Mind Game', 
-      path: '/mind-game', // ✅ เปลี่ยนเป็น /mind-game ให้ตรงกับ App.jsx
+      path: '/mind-game',
       icon: <Gamepad2 size={20} className="text-purple-500" /> 
     },
     { name: 'Mood', path: '/mood', icon: <Heart size={20} className="text-rose-500" /> },
@@ -116,12 +90,9 @@ const Navbar = () => {
           </Link>
 
           <div className="flex items-center gap-2">
-            {/* ✅ แสดงจุดแดงที่ปุ่ม Home ถ้ามีคำเชิญ เพื่อให้เห็นเด่นๆ ตั้งแต่ข้างนอก */}
+            {/* ✅ ลบจุดแดงแจ้งเตือนที่ปุ่ม Home ออก */}
             <Link to="/" className={`relative p-2 rounded-xl transition-all ${location.pathname === '/' ? activeColor : 'text-slate-300 hover:text-rose-400'}`}>
               <Home size={22} />
-              {pendingInvites > 0 && (
-                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-600 rounded-full animate-ping"></span>
-              )}
             </Link>
 
             {userData.username && (
@@ -139,12 +110,7 @@ const Navbar = () => {
                   className={`relative p-2 rounded-xl transition-all ${isMenuOpen ? 'bg-rose-500 text-white' : 'text-slate-400 hover:bg-slate-50'}`}
                 >
                   {isMenuOpen ? <X size={26} /> : <Menu size={26} />}
-                  {/* ✅ จุดแดงที่ปุ่มเมนู Hamburger */}
-                  {!isMenuOpen && pendingInvites > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-[10px] font-black rounded-full flex items-center justify-center animate-bounce border-2 border-white">
-                      {pendingInvites}
-                    </span>
-                  )}
+                  {/* ✅ ลบจุดแจ้งเตือนตัวเลขที่ปุ่ม Menu ออก */}
                 </button>
               </div>
             )}
@@ -168,20 +134,11 @@ const Navbar = () => {
                   }`}
                 >
                   <span className="p-1.5 bg-slate-50 rounded-xl group-hover:bg-white transition-colors relative">
-      {React.cloneElement(item.icon, { size: 18 })}
-      {/* ✅ โชว์จุดแดงเฉพาะเมนูที่ไม่ใช่หน้าแรก (/) */}
-      {pendingInvites > 0 && item.path !== '/' && item.name === 'Mind Game' && (
-        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
-      )}
-    </span>
-    {item.name}
-
-    {item.name === 'Mind Game' && pendingInvites > 0 && (
-      <span className="absolute right-4 w-5 h-5 bg-red-600 text-white text-[10px] font-black rounded-full flex items-center justify-center animate-bounce border-2 border-white shadow-sm">
-          {pendingInvites}
-      </span>
-    )}
-  </Link>
+                    {React.cloneElement(item.icon, { size: 18 })}
+                    {/* ✅ ลบจุดแจ้งเตือนภายในรายการเมนูออกทั้งหมด */}
+                  </span>
+                  {item.name}
+                </Link>
               ))}
 
               {ALLOWED_IDS.includes(userId) && (

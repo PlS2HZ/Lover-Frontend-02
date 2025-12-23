@@ -13,7 +13,6 @@ import WishlistPage from './pages/WishlistPage';
 import MomentPage from './pages/MomentPage';
 import HomeAdminPage from './pages/HomeAdminPage';
 import MindGame from './pages/MindGame';
-import PlayMindGame from './pages/PlayMindGame';
 import GameSession from './pages/GameSession';
 import CreateLevel from './pages/CreateLevel';
 
@@ -110,14 +109,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <MindGame user={user} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/playmindgame/:id" // ✅ หน้าเลือกโหมด
-            element={
-              <ProtectedRoute>
-                <PlayMindGame user={user} />
               </ProtectedRoute>
             }
           />
