@@ -118,32 +118,30 @@ const GameSession = ({ user }) => {
                         เริ่มพิมพ์คำถามเพื่อทายใจได้เลย...
                     </div>
                 )}
-                {messages.map(m => (
-                    <div key={m.id} className="mb-4 animate-in fade-in slide-in-from-bottom-2">
-                        {/* กล่องข้อความของผู้เล่น (ชิดขวา) */}
-                        <div className="flex justify-end mb-1">
-                            <div className="bg-slate-100 p-3 rounded-2xl rounded-tr-sm shadow-sm font-bold text-slate-700 max-w-[80%]">
-                                {m.message}
-                            </div>
-                        </div>
-                        
-                        {/* กล่องข้อความของ Bot (ชิดซ้าย) */}
-                        {m.answer ? (
-                            <div className="flex justify-start">
-                                <div className="bg-rose-50 p-3 rounded-2xl rounded-tl-sm border border-rose-100 shadow-sm max-w-[90%]">
-                                    <span className="text-[10px] font-black text-rose-400 uppercase italic block mb-1">Rubssarb Bot:</span>
-                                    <div className="text-sm font-bold text-rose-600 leading-relaxed">
-                                        {m.answer}
-                                    </div>
-                                </div>
-                            </div>
-                        ) : mode === 'bot' && (
-                            <div className="mt-1 ml-4 text-[10px] text-slate-300 animate-pulse font-bold italic">
-                                Gemini is thinking...
-                            </div>
-                        )}
+{messages.map(m => (
+    <div key={m.id} className="mb-4 animate-in fade-in slide-in-from-bottom-2">
+        {/* ผู้เล่นถาม */}
+        <div className="flex justify-end mb-1">
+            <div className="bg-slate-900 text-white p-3 px-5 rounded-[1.5rem] rounded-tr-none shadow-lg font-bold text-sm max-w-[80%]">
+                {m.message}
+            </div>
+        </div>
+        
+        {/* บอทตอบ */}
+        {m.answer && (
+            <div className="flex justify-start items-end gap-2">
+                <div className="w-8 h-8 rounded-full bg-rose-500 flex items-center justify-center text-[10px] font-black text-white shadow-md">
+                    BOT
+                </div>
+                <div className="bg-white p-3 px-5 rounded-[1.5rem] rounded-tl-none border-2 border-rose-100 shadow-sm max-w-[85%]">
+                    <div className="text-sm font-black text-rose-600 leading-relaxed italic">
+                        {m.answer}
                     </div>
-                ))}
+                </div>
+            </div>
+        )}
+    </div>
+))}
             </div>
 
             {/* Success Screen */}
